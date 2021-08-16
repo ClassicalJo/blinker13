@@ -1,10 +1,23 @@
-const { keyPressed, init, initKeys, keyMap, bindKeys, Vector } = kontra
+const { degToRad, keyPressed, init, initKeys, keyMap, bindKeys, Vector } = kontra
 const { canvas, context } = init()
 
 function distanceToTarget(origin, dest) {
     return Math.sqrt(Math.pow((dest.x - origin.x), 2) + Math.pow((dest.y - origin.y), 2))
 }
 
+function noDirection() {
+    return !keyPressed('up') && !keyPressed('down') && !keyPressed('left') && !keyPressed('right')
+}
+function leftRightSwitch(a, b, c) {
+    if (keyPressed('left')) return a
+    else if (keyPressed('right')) return b
+    else return c
+}
+function upDownSwitch(a, b, c) {
+    if (keyPressed('up')) return a
+    else if (keyPressed('down')) return b
+    else return c
+}
 class Combo {
     constructor(steps, cooldown, timer) {
         this.steps = steps
@@ -37,17 +50,56 @@ class Combo {
 class Combo1 extends Combo {
     constructor() {
         super([10, 15, 25], 500, 4000);
-
+        this.attackDistance = 50
     }
     attack(body) {
-        let movement = this.steps[this.currentStep]
-        if (!keyPressed('left') && !keyPressed('right') && !keyPressed('down') && !keyPressed('up')) {
-            body.dy = -movement
+        let move = this.steps[this.currentStep]
+        let swordOffsetX = leftRightSwitch(-this.attackDistance, this.attackDistance, 0)
+        let swordOffsetY = upDownSwitch(-this.attackDistance, this.attackDistance, 0)
+        if(Math.abs(swordOffsetX) > 0 && Math.abs(swordOffsetY) > 0) {
+            swordOffsetY /= 1.5
+            swordOffsetX /= 1.5
+        }
+        function swordRotation() {
+            //POSSIBLE SHIELD 
+            // let a = leftRightSwitch(90, -90, null)
+            // let b = upDownSwitch(0, 180, null)
+            let a = leftRightSwitch(90, -90, null)
+            let b = upDownSwitch(180, 0, null)
+            if (a !== null && b !== null) return degToRad(a+b)/2
+            return degToRad((a || b))
+            // else if (absA > 0) return degToRad(a)
+            // else if (absB > 0) return degToRad(b)
+            // else return 0
+
+        }
+        if (noDirection()) {
+            body.dy = -move
+            let sword = this.craftSword(0, -this.attackDistance, Math.PI)
+            body.addChild(sword)
         }
         else {
-            body.dx = keyPressed('left') ? -movement : keyPressed('right') ? movement : 0
-            body.dy = keyPressed('up') ? -movement : keyPressed('down') ? movement : 0
+            let sword = this.craftSword(swordOffsetX, swordOffsetY, swordRotation())
+            body.dx = leftRightSwitch(-move, move, 0)
+            body.dy = upDownSwitch(-move, move, 0)
+            body.addChild(sword)
         }
+
+
+    }
+    craftSword(x, y, rotation) {
+        return kontra.Sprite({
+            x,
+            y,
+            rotation,
+            width: 5,
+            anchor: { x: 0.5, y: 0.5 },
+            height: 30,
+            color: 'red'
+        })
+    }
+    swing(sword) {
+
     }
 }
 
@@ -137,7 +189,6 @@ const shadow = kontra.Sprite({
 })
 
 function makeLink(origin, dest) {
-    console.log(distanceToTarget(origin, dest))
     return kontra.Sprite({
         x: origin.x,
         y: origin.y,
@@ -164,4 +215,6 @@ let switcheroo = () => {
         }
     }, 1000)
 }
+
+
 let switcherooOnCooldown = false
