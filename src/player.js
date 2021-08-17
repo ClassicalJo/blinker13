@@ -1,4 +1,4 @@
-const { degToRad, keyPressed, init, initKeys, keyMap, bindKeys, Vector } = kontra
+const { degToRad, keyPressed, init, initKeys, keyMap, bindKeys, Vector, angleToTarget } = kontra
 const { canvas, context } = init()
 
 function distanceToTarget(origin, dest) {
@@ -49,6 +49,7 @@ class Combo {
 
 class Combo1 extends Combo {
     constructor() {
+        
         super([10, 15, 25], 500, 4000);
         this.attackDistance = 50
     }
@@ -56,30 +57,19 @@ class Combo1 extends Combo {
         let move = this.steps[this.currentStep]
         let swordOffsetX = leftRightSwitch(-this.attackDistance, this.attackDistance, 0)
         let swordOffsetY = upDownSwitch(-this.attackDistance, this.attackDistance, 0)
-        if(Math.abs(swordOffsetX) > 0 && Math.abs(swordOffsetY) > 0) {
+        if (Math.abs(swordOffsetX) > 0 && Math.abs(swordOffsetY) > 0) {
             swordOffsetY /= 1.5
             swordOffsetX /= 1.5
         }
-        function swordRotation() {
-            //POSSIBLE SHIELD 
-            // let a = leftRightSwitch(90, -90, null)
-            // let b = upDownSwitch(0, 180, null)
-            let a = leftRightSwitch(90, -90, null)
-            let b = upDownSwitch(180, 0, null)
-            if (a !== null && b !== null) return degToRad(a+b)/2
-            return degToRad((a || b))
-            // else if (absA > 0) return degToRad(a)
-            // else if (absB > 0) return degToRad(b)
-            // else return 0
 
-        }
         if (noDirection()) {
             body.dy = -move
-            let sword = this.craftSword(0, -this.attackDistance, Math.PI)
+            let sword = this.craftSword(0, 0)
             body.addChild(sword)
+
         }
         else {
-            let sword = this.craftSword(swordOffsetX, swordOffsetY, swordRotation())
+            let sword = this.craftSword(swordOffsetX, swordOffsetY)
             body.dx = leftRightSwitch(-move, move, 0)
             body.dy = upDownSwitch(-move, move, 0)
             body.addChild(sword)
@@ -87,20 +77,68 @@ class Combo1 extends Combo {
 
 
     }
-    craftSword(x, y, rotation) {
+    craftSword(x, y) {
+        function swordRotation() {
+            let angleMap = {
+                'up': 45,
+                'rightup': 90,
+                'right': 135,
+                'rightdown': 180,
+                'down': 225,
+                'leftdown': 270,
+                'left': 315,
+                'leftup': 360,
+            }
+            //POSSIBLE SHIELD 
+            // let a = leftRightSwitch(90, -90, null)
+            // let b = upDownSwitch(0, 180, null)
+            let a = leftRightSwitch('left', 'right', null) || ''
+            let b = upDownSwitch('up', 'down', null) || ''
+            let direction = a + b
+
+            return degToRad(angleMap[direction])
+
+            // else if (absA > 0) return degToRad(a)
+            // else if (absB > 0) return degToRad(b)
+            // else return 0
+
+        }
         return kontra.Sprite({
-            x,
-            y,
-            rotation,
-            width: 5,
+            x: 0,
+            y: -75,
+            rotation: swordRotation(),
+            width: 50,
             anchor: { x: 0.5, y: 0.5 },
-            height: 30,
-            color: 'red'
+            height: 5,
+            color: 'red',
+            swing: {
+                should: true,
+                total: 100,
+                accumulated: 0,
+                duration: 50,
+            },
+            rotate: {
+                should: true,
+                total: degToRad(90),
+                accumulated: 0,
+                duration: 10,
+            },
+            update: function () {
+                if (this.rotate.should) {
+                    let speed = this.rotate.total / this.rotate.duration
+                    this.rotation += speed
+                    this.rotate.accumulated += speed
+                    this.x = -75 * Math.cos(this.rotation)
+                    this.y = -75 * Math.sin(this.rotation)
+                    if (this.rotate.accumulated >= this.rotate.total) this.rotate.should = false
+
+                }
+            }
+
         })
     }
-    swing(sword) {
 
-    }
+
 }
 
 const playerSprite = {
@@ -146,11 +184,11 @@ const playerSprite = {
         }, cooldown)
     },
     move: function () {
-        this.ddx = keyPressed('left') ? -this.baseAccel : keyPressed('right') ? this.baseAccel : 0
-        this.ddy = keyPressed('up') ? -this.baseAccel : keyPressed('down') ? this.baseAccel : 0
+        this.ddx = leftRightSwitch(-this.baseAccel, this.baseAccel, 0)
+        this.ddy = upDownSwitch(-this.baseAccel, this.baseAccel, 0)
         if (Math.abs(this.dx) > this.speedLimit) this.dx *= 0.9
         if (Math.abs(this.dy) > this.speedLimit) this.dy *= 0.9
-        if (!keyPressed('up') && !keyPressed('down')) this.dy *= 0.99
+        if (!keyPressed('up') && !keyPressed('down')) this.dy *= 0.98
         if (!keyPressed('left') && !keyPressed('right')) this.dx *= 0.98
         this.advance()
     },
