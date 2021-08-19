@@ -47,6 +47,56 @@ class Combo {
 
 }
 
+class RectBody extends kontra.Sprite.class {
+    constructor(x, y, width, height) {
+        super();
+        this.anchor = { x: 0.5, y: 0.5 };
+        this.canCollide = true;
+        this.timeouts = [];
+        this.width = width;
+        this.height = height;
+        this.x = x;
+        this.y = y;
+        this.vertices = this.getVertices()
+        this.shouldRemove = false
+    }
+    updateVertices() {
+        this.vertices = this.getVertices()
+    }
+    getVertices() {
+        let halfWidth = this.width / 2
+        let halfHeight = this.height / 2
+        let x = this.x
+        let y = this.y
+        let leftUp = { x: x - halfWidth, y: y - halfHeight }
+        let rightUp = { x: x + halfWidth, y: y - halfHeight }
+        let leftDown = { x: x - halfWidth, y: y + halfHeight }
+        let rightDown = { x: x + halfWidth, y: y + halfHeight }
+        let vertices = [leftUp, leftDown, rightDown, rightUp]
+        return vertices.map(key => {
+            let theta = this.rotation
+            let newX = (key.x - x) * Math.cos(theta) - (key.y - y) * Math.sin(theta) + x
+            let newY = (key.x - x) * Math.sin(theta) + (key.y - y) * Math.cos(theta) + y
+            return { x: newX, y: newY }
+        })
+    }
+
+    setCollision(bool, time) {
+        if (time) this.timeouts.push(setTimeout(() => this.canCollide = bool, time))
+        else this.canCollide = bool
+    }
+    collide() {
+        return
+    }
+    add() {
+        world.addChild(this)
+    }
+    remove() {
+        this.timeouts.forEach(key => clearTimeout(key))
+        this.shouldRemove = true
+    }
+}
+
 class Step {
     constructor(stepDistance, stepTimeout) {
         this.distance = stepDistance,
@@ -78,58 +128,19 @@ class Combo1 extends Combo {
             body.dx = leftRightSwitch(-move, move, 0)
             body.dy = upDownSwitch(-move, move, 0)
             let sword = new Sword(swordOffset, body)
-            // let sword = this.craftSword(body)
-            // body.addChild(sword)
-            world.addChild(sword)
+            sword.add()
 
         }
     }
-    craftSword(body) {
-        let direction = getDirection(body)
-        let theta = Math.atan2(direction.y, direction.x)
-        let swingOffset = degToRad(135)
-        let offset = { x: -body.width * 4, y: -body.height * 4 }
-        return kontra.Sprite({
-            x: offset.x * Math.cos(theta + swingOffset),
-            y: offset.y * Math.sin(theta + swingOffset),
-            rotation: theta + swingOffset,
-            width: 100,
-            anchor: { x: 0.5, y: 0.5 },
-            height: 5,
-            color: 'red',
-            swing: {
-                should: true,
-                total: degToRad(90),
-                accumulated: 0,
-                duration: 100,
-            },
-            update: function () {
-                if (this.swing.should && this.swing.accumulated < this.swing.total) {
-                    let speed = this.swing.total / this.swing.duration
-                    this.rotation += speed
-                    this.swing.accumulated += speed
-                    this.x = offset.x * Math.cos(this.rotation)
-                    this.y = offset.y * Math.sin(this.rotation)
-                }
-                else body.removeChild(this)
-            },
-        })
-    }
-
-
 }
 
 
-class Player extends kontra.Sprite.class {
+class Player extends RectBody {
     constructor(x, y, color, name) {
-        super();
-        this.x = x
-        this.y = y
+        super(x, y, 25, 25);
         this.moveSpeed = 0.25
         this.speedLimit = 5
         this.baseSpeed = 2
-        this.width = 25
-        this.height = 25
         this.anchor = { x: 0.5, y: 0.5 }
         this.attackCooldown = false
         this.combo = null
@@ -137,6 +148,8 @@ class Player extends kontra.Sprite.class {
         this.baseColor = color
         this.color = color
         this.name = name
+        this.canCollide = true
+        this.label = 'player'
     }
     attack() {
         this.color = 'red'
@@ -188,6 +201,15 @@ class Player extends kontra.Sprite.class {
         if (!keyPressed('left') && !keyPressed('right')) this.dx *= 0.95
         this.advance()
     }
+    collide(body) {
+        if (!this.canCollide) return
+        if (body instanceof Enemy) {
+            this.setCollision(false)
+            this.dy = -10
+            console.log('got hit')
+            this.setCollision(true, 1000)
+        }
+    }
     update() {
         this.children.forEach(key => key.update())
         if (!this.isActive()) return
@@ -200,6 +222,7 @@ class Player extends kontra.Sprite.class {
         }
         else if (!keyPressed('shift')) this.released = true
         this.move()
+        this.vertices = this.getVertices()
     }
 }
 
@@ -207,21 +230,22 @@ const player = new Player(400, 200, 'goldenrod', 'player')
 const shadow = new Player(375, 500, 'purple', 'shadow')
 
 
-class Link extends kontra.Sprite.class {
+class Link extends RectBody {
     constructor(origin, dest) {
         super();
-        this.x = origin.x;
-        this.y = origin.y;
-        this.rotation = angleToTarget(origin, dest);
         this.width = 5;
         this.height = distanceToTarget(origin, dest);
-        this.anchor = { x: 0.5, y: 1 };
+        this.x = origin.x;
+        this.y = origin.y;
+        this.anchor = { x: 0.5, y: 1 }
+        this.rotation = angleToTarget(origin, dest);
         this.color = 'black';
-        this.fadeout = 1000
-        this.remove()
+        this.fadeout = 1000   
+        this.disappear()
     }
-    remove() {
-        setTimeout(() => world.removeChild(this), this.fadeout)
+    disappear(){
+        let timeout = setTimeout(() => this.remove(), this.fadeout)
+        this.timeouts.push(timeout)
     }
 }
 
@@ -231,28 +255,27 @@ let activeSprite = 'player'
 let toggleShadow = str => str === 'player' ? 'shadow' : 'player'
 let switcheroo = () => {
     let link = new Link(player, shadow)
-    world.addChild(link)
+    link.add()
     activeSprite = toggleShadow(activeSprite)
-    setTimeout(() => world.removeChild(link), 1000)
 }
 
 
 let switcherooOnCooldown = false
 
 
-class Sword extends kontra.Sprite.class {
+class Sword extends RectBody {
     constructor(offset, body) {
-        super();
         let theta = body.rotation
         let swingOffset = degToRad(135)
+        let x = body.x + offset.x * Math.cos(theta + swingOffset);
+        let y = body.y + offset.y * Math.sin(theta + swingOffset);
+        let width = 100
+        let height = 5
+        super(x, y, width, height);
+        this.label = 'sword'
         this.offset = offset
-        this.x = body.x + offset.x * Math.cos(theta + swingOffset)
-        this.y = body.y + offset.y * Math.sin(theta + swingOffset)
         this.center = body
         this.rotation = theta + swingOffset
-        this.width = 100
-        this.anchor = { x: 0.5, y: 0.5 }
-        this.height = 5
         this.color = 'red'
         this.swing = {
             should: true,
@@ -261,6 +284,14 @@ class Sword extends kontra.Sprite.class {
             duration: 100,
         }
     }
+    collide() {
+
+    }
+    damage() {
+        let min = 15
+        let max = 20
+        return kontra.randInt(min, max)
+    }
     update() {
         if (this.swing.should && this.swing.accumulated < this.swing.total) {
             let speed = this.swing.total / this.swing.duration
@@ -268,35 +299,36 @@ class Sword extends kontra.Sprite.class {
             this.swing.accumulated += speed
             this.x = this.center.x + this.offset.x * Math.cos(this.rotation)
             this.y = this.center.y + this.offset.y * Math.sin(this.rotation)
+            this.updateVertices()
         }
-        else world.removeChild(this)
+        else this.remove()
     }
 
 }
 
-class Enemy extends kontra.Sprite.class {
+class Enemy extends RectBody {
     constructor(x, y, maxHp) {
-        super();
+        super(x, y, 100, 100);
         this.maxHp = maxHp
         this.hp = maxHp
-        this.width = 100
-        this.height = 100
-        this.x = x
-        this.y = y
         this.color = 'lavender'
-        this.anchor = {x:0.5, y:0.5}
+        this.label = 'enemy'
     }
 
-    getHit(damage) {
-        this.hp -= damage
-        if (this.hp <= 0) return this.die()
-    }
-
-    die() {
-        world.removeChild(this)
+    collide(body) {
+        if (body instanceof Player) {
+            //another thing
+        }
+        if (body.label === 'sword') {
+            this.setCollision(false)
+            this.hp -= body.damage()
+            this.setCollision(true, 1000)
+            if (this.hp <= 0) this.remove()
+        }
     }
 }
 
 let enemy1 = new Enemy(500, 500, 40)
 let enemy2 = new Enemy(701, 500, 40)
+
 

@@ -70,7 +70,7 @@ const loop = kontra.GameLoop({
     },
 })
 
-loop.start()
+
 
 class World extends kontra.Sprite.class {
     constructor() {
@@ -82,15 +82,20 @@ class World extends kontra.Sprite.class {
         })
     }
     update() {
-        this.children.forEach(key => key.update())
-        for (let i = 0; i < this.children.length; i++) {
-            for (let j = i + 1; j < this.children.length; j++) {
-                let collision = SAT(this.children[i], this.children[j])
-                if (collision) {
-                    console.log('collision found')
+        for (let i = this.children.length - 1; i >= 0; i--) {
+            for (let j = i - 1; j >= 0; j--) {
+                if (this.children[i].canCollide && this.children[j].canCollide) {
+                    let collision = SAT(this.children[i], this.children[j])
+                    if (collision) {
+                        this.children[j].collide(this.children[i])
+                        this.children[i].collide(this.children[j])
+                    }
                 }
-
             }
+        }
+        for (let i = this.children.length - 1; i >= 0; i--) {
+            if (this.children[i].shouldRemove) this.children.splice(i, 1)
+            else this.children[i].update()
         }
 
     }
@@ -98,31 +103,13 @@ class World extends kontra.Sprite.class {
 let world = new World()
 
 // world.addChild(sprite)
-// world.addChild(player)
-world.addChild(shadow)
-world.addChild(enemy1)
-world.addChild(enemy2)
+player.add()
+shadow.add()
+enemy1.add()
+enemy2.add()
 
 
 function SAT(body1, body2) {
-    function getVertices(body) {
-        let halfWidth = body.width / 2
-        let halfHeight = body.height / 2
-        let leftUp = { x: body.x - halfWidth, y: body.y - halfHeight }
-        let rightUp = { x: body.x + halfWidth, y: body.y - halfHeight }
-        let leftDown = { x: body.x - halfWidth, y: body.y + halfHeight }
-        let rightDown = { x: body.x + halfWidth, y: body.y + halfHeight }
-        let vertices = [leftUp, leftDown, rightDown, rightUp]
-        if (body.rotation !== 0) {
-            return vertices.map(key => {
-                let theta = body.rotation
-                let x = (key.x - body.x) * Math.cos(theta) - (key.y - body.y) * Math.sin(theta) + body.x
-                let y = (key.x - body.x) * Math.sin(theta) + (key.y - body.y) * Math.cos(theta) + body.y
-                return { x, y }
-            })
-        }
-        return vertices
-    }
     function getNormals(vertices) {
         let axes = []
         for (let i = 0; i < vertices.length; i++) {
@@ -137,7 +124,6 @@ function SAT(body1, body2) {
     }
 
     function getProjection(axis, vertices) {
-
         let vector = kontra.Vector(axis.x, axis.y)
         let min = vector.dot(vertices[0])
         let max = min
@@ -157,26 +143,26 @@ function SAT(body1, body2) {
             }
         }
     }
-    let vertices1 = getVertices(body1)
-    let vertices2 = getVertices(body2)
-    
-    let axes1 = getNormals(vertices1)
-    let axes2 = getNormals(vertices2)
+
+    let axes1 = getNormals(body1.vertices)
+    let axes2 = getNormals(body2.vertices)
 
 
     for (let i = 0; i < axes1.length; i++) {
         let axis = axes1[i]
-        let p1 = getProjection(axis, vertices1)
-        let p2 = getProjection(axis, vertices2)
+        let p1 = getProjection(axis, body1.vertices)
+        let p2 = getProjection(axis, body2.vertices)
         if (!p1.overlap(p2)) return false
     }
     for (let i = 0; i < axes2.length; i++) {
         let axis = axes2[i]
-        let p1 = getProjection(axis, vertices1)
-        let p2 = getProjection(axis, vertices2)
+        let p1 = getProjection(axis, body1.vertices)
+        let p2 = getProjection(axis, body2.vertices)
         if (!p1.overlap(p2)) return false
     }
     return true
 }
-let collision = SAT(shadow, sprite)
+
+loop.start()
+
 
