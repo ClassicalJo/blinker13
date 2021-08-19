@@ -2,6 +2,8 @@ initKeys()
 keyMap['ControlLeft'] = 'ctrl'
 keyMap['ShiftLeft'] = 'shift'
 
+
+
 bindKeys('ctrl', function () {
     if (switcherooOnCooldown) return
     switcherooOnCooldown = true
@@ -23,7 +25,7 @@ let directions = {
 
 function getDirectionVector(body) {
     let vector = kontra.Vector(body.dx, body.dy)
-    if (vector.x === 0 && vector.y === 0) return kontra.Vector(0,-1).normalize()
+    if (vector.x === 0 && vector.y === 0) return kontra.Vector(0, -1).normalize()
     return vector.normalize()
 }
 
@@ -46,32 +48,52 @@ function getDirection(body) {
         return directions[a + b]
     }
 }
-
-const bodies = []
-const playerBodies = [player, shadow]
-
 const sprite = kontra.Sprite({
     x: 200,
     y: 200,
-    color: 'blue',
+    color: 'pink',
     width: 50,
     height: 50,
 })
-bodies.push(sprite)
+
 
 const loop = kontra.GameLoop({
     update: () => {
-        for (let i = playerBodies.length - 1; i >= 0; i--) {
-            if (playerBodies[i].destroy) playerBodies[i].splice(i, 1)
-            else playerBodies[i].update()
-        }
-        bodies.forEach(key => key.update());
+        world.update()
     },
     render: () => {
-        playerBodies.forEach(key => key.render())
-        bodies.forEach(key => key.render());
+        world.render()
     },
 })
 
 loop.start()
 
+class World extends kontra.Sprite.class {
+    constructor() {
+        super();
+    }
+    render() {
+        this.children.forEach(key => {
+            key.render()
+        })
+    }
+    update() {
+        this.children.forEach(key => key.update())
+        for (let i = 0; i < this.children.length; i++) {
+            for (let j = i + 1; j < this.children.length; j++) {
+                let collision = kontra.collides(this.children[i], this.children[j])
+                if (collision) {
+                    console.log('collision found')
+                }
+                
+            }
+        }
+
+    }
+}
+let world = new World()
+
+world.addChild(sprite)
+world.addChild(player)
+world.addChild(shadow)
+world.addChild(enemy)

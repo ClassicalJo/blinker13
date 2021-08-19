@@ -63,6 +63,7 @@ class Combo1 extends Combo {
     }
     attack(body) {
         let move = this.steps[this.currentStep].distance
+        let swordOffset = { x: -body.width * 4, y: -body.height * 4 }
         if (noDirection()) {
             let direction = getDirection(body)
             if (body.dx !== 0 && body.dy !== 0) {
@@ -70,14 +71,16 @@ class Combo1 extends Combo {
                 body.dy = direction.y * move
             }
 
-            let sword = this.craftSword(body)
-            body.addChild(sword)
+            let sword = new Sword(swordOffset, body)
+            world.addChild(sword)
         }
         else {
             body.dx = leftRightSwitch(-move, move, 0)
             body.dy = upDownSwitch(-move, move, 0)
-            let sword = this.craftSword(body)
-            body.addChild(sword)
+            let sword = new Sword(swordOffset, body)
+            // let sword = this.craftSword(body)
+            // body.addChild(sword)
+            world.addChild(sword)
 
         }
     }
@@ -167,13 +170,7 @@ class Player extends kontra.Sprite.class {
     move() {
         let y = upDownSwitch(-1, 1, 0)
         let x = leftRightSwitch(-1, 1, 0)
-        
-        if (y !== 0 || x !== 0) {
-            
-            this.rotation = Math.atan2(y, x)
-            console.log(this.rotation)
-        }
-
+        // if (y !== 0 || x !== 0) this.rotation = Math.atan2(y, x)
         let shouldTurbo = (scalar, minSpeed) => Math.abs(scalar) < minSpeed
         let shouldSlow = (scalar, maxSpeed) => Math.abs(scalar) > maxSpeed
 
@@ -208,17 +205,22 @@ const player = new Player(400, 200, 'goldenrod', 'player')
 const shadow = new Player(200, 200, 'purple', 'shadow')
 
 
-function makeLink(origin, dest) {
-    return kontra.Sprite({
-        x: origin.x,
-        y: origin.y,
-        rotation: kontra.angleToTarget(origin, dest),
-        width: 5,
-        height: distanceToTarget(origin, dest),
-        anchor: { x: 0.5, y: 1 },
-        color: 'black',
-        name: 'link',
-    })
+class Link extends kontra.Sprite.class {
+    constructor(origin, dest) {
+        super();
+        this.x = origin.x;
+        this.y = origin.y;
+        this.rotation = angleToTarget(origin, dest);
+        this.width = 5;
+        this.height = distanceToTarget(origin, dest);
+        this.anchor = { x: 0.5, y: 1 };
+        this.color = 'black';
+        this.fadeout = 1000
+        this.remove()
+    }
+    remove() {
+        setTimeout(() => world.removeChild(this), this.fadeout)
+    }
 }
 
 let playerMap = { shadow, player }
@@ -226,15 +228,71 @@ let activeSprite = 'player'
 
 let toggleShadow = str => str === 'player' ? 'shadow' : 'player'
 let switcheroo = () => {
-    let link = makeLink({ x: player.x, y: player.y }, { x: shadow.x, y: shadow.y })
-    bodies.push(link)
+    let link = new Link(player, shadow)
+    world.addChild(link)
     activeSprite = toggleShadow(activeSprite)
-    setTimeout(() => {
-        for (let i = bodies.length - 1; i >= 0; i--) {
-            if (bodies[i].name === link.name) bodies.splice(i, 1)
-        }
-    }, 1000)
+    setTimeout(() => world.removeChild(link), 1000)
 }
 
 
 let switcherooOnCooldown = false
+
+
+class Sword extends kontra.Sprite.class {
+    constructor(offset, body) {
+        super();
+        let theta = body.rotation
+        let swingOffset = degToRad(135)
+        this.offset = offset
+        this.x = body.x + offset.x * Math.cos(theta + swingOffset)
+        this.y = body.y + offset.y * Math.sin(theta + swingOffset)
+        this.center = body
+        this.rotation = theta + swingOffset
+        this.width = 100
+        this.anchor = { x: 0.5, y: 0.5 }
+        this.height = 5
+        this.color = 'red'
+        this.swing = {
+            should: true,
+            total: degToRad(90),
+            accumulated: 0,
+            duration: 100,
+        }
+    }
+    update() {
+        if (this.swing.should && this.swing.accumulated < this.swing.total) {
+            let speed = this.swing.total / this.swing.duration
+            this.rotation += speed
+            this.swing.accumulated += speed
+            this.x = this.center.x + this.offset.x * Math.cos(this.rotation)
+            this.y = this.center.y + this.offset.y * Math.sin(this.rotation)
+        }
+        else world.removeChild(this)
+    }
+
+}
+
+class Enemy extends kontra.Sprite.class {
+    constructor(x, y, maxHp) {
+        super();
+        this.maxHp = maxHp
+        this.hp = maxHp
+        this.width = 100
+        this.height = 100
+        this.x = x
+        this.y = y
+        this.color = 'lavender'
+    }
+
+    getHit(damage) {
+        this.hp -= damage
+        if (this.hp <= 0) return this.die()
+    }
+
+    die() {
+        world.removeChild(this)
+    }
+}
+
+let enemy = new Enemy(500, 500, 40)
+
