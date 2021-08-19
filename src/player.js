@@ -170,7 +170,9 @@ class Player extends kontra.Sprite.class {
     move() {
         let y = upDownSwitch(-1, 1, 0)
         let x = leftRightSwitch(-1, 1, 0)
-        // if (y !== 0 || x !== 0) this.rotation = Math.atan2(y, x)
+        if (y !== 0 || x !== 0) {
+            this.rotation = Math.atan2(y, x)
+        }
         let shouldTurbo = (scalar, minSpeed) => Math.abs(scalar) < minSpeed
         let shouldSlow = (scalar, maxSpeed) => Math.abs(scalar) > maxSpeed
 
@@ -202,7 +204,7 @@ class Player extends kontra.Sprite.class {
 }
 
 const player = new Player(400, 200, 'goldenrod', 'player')
-const shadow = new Player(200, 200, 'purple', 'shadow')
+const shadow = new Player(375, 500, 'purple', 'shadow')
 
 
 class Link extends kontra.Sprite.class {
@@ -282,6 +284,7 @@ class Enemy extends kontra.Sprite.class {
         this.x = x
         this.y = y
         this.color = 'lavender'
+        this.anchor = {x:0.5, y:0.5}
     }
 
     getHit(damage) {
@@ -294,5 +297,6 @@ class Enemy extends kontra.Sprite.class {
     }
 }
 
-let enemy = new Enemy(500, 500, 40)
+let enemy1 = new Enemy(500, 500, 40)
+let enemy2 = new Enemy(701, 500, 40)
 
