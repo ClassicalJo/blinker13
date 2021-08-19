@@ -240,10 +240,10 @@ class Link extends RectBody {
         this.anchor = { x: 0.5, y: 1 }
         this.rotation = angleToTarget(origin, dest);
         this.color = 'black';
-        this.fadeout = 1000   
+        this.fadeout = 1000
         this.disappear()
     }
-    disappear(){
+    disappear() {
         let timeout = setTimeout(() => this.remove(), this.fadeout)
         this.timeouts.push(timeout)
     }
@@ -281,7 +281,7 @@ class Sword extends RectBody {
             should: true,
             total: degToRad(90),
             accumulated: 0,
-            duration: 100,
+            duration: 10,
         }
     }
     collide() {
@@ -308,7 +308,7 @@ class Sword extends RectBody {
 
 class Enemy extends RectBody {
     constructor(x, y, maxHp) {
-        super(x, y, 100, 100);
+        super(x, y, 50, 50);
         this.maxHp = maxHp
         this.hp = maxHp
         this.color = 'lavender'
@@ -321,6 +321,9 @@ class Enemy extends RectBody {
         }
         if (body.label === 'sword') {
             this.setCollision(false)
+            let damage = body.damage()
+            let sprite = new Damage(this, damage)
+            world.addChild(sprite)
             this.hp -= body.damage()
             this.setCollision(true, 1000)
             if (this.hp <= 0) this.remove()
@@ -331,4 +334,31 @@ class Enemy extends RectBody {
 let enemy1 = new Enemy(500, 500, 40)
 let enemy2 = new Enemy(701, 500, 40)
 
+class Damage extends kontra.Sprite.class {
+    constructor(body, damage) {
+        super();
+        this.x = body.x
+        this.y = body.y
+        this.radius = 10
+        this.fade = 1000
+        this.value = damage
+        this.color = 'red'
+        this.dx = kontra.randInt(-2, 2)
+        this.dy = kontra.randInt(-5, -3) - 2
+        this.ddy = 0.2
+
+    }
+    draw() {
+        this.context.fillStyle = "rgba(255,0,0, " + this.opacity+ ")"
+        this.context.beginPath();
+        this.context.font = "15px Arial";
+        this.context.fillText(this.value, 10, 50);
+
+    }
+    update() {
+        this.opacity -= 0.01
+        this.advance()
+        if(this.opacity < 0) world.removeChild(this)
+    }
+}
 
