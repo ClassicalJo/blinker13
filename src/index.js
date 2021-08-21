@@ -3,7 +3,6 @@ keyMap['ControlLeft'] = 'ctrl'
 keyMap['ShiftLeft'] = 'shift'
 
 
-
 bindKeys('ctrl', function () {
     if (switcherooOnCooldown) return
     switcherooOnCooldown = true
@@ -70,44 +69,69 @@ const loop = kontra.GameLoop({
     },
 })
 
-
-
 class World extends kontra.Sprite.class {
-    constructor() {
+    constructor(x, y, z) {
         super();
+        this.depths = []
+        for (let i = 0; i < z; i++) {
+            this.depths.push(new Depth(x, y, i))
+        }
+        this.currentCoords = new Coords(0, 0, 0)
+        this.currentQuadrant = this.getQuadrant(this.currentCoords)
+        UI.start()
+    }
+
+    add(coords, body) {
+        this.getQuadrant(coords).add(body)
+    }
+    getQuadrant(coords) {
+        let { x, y, z } = coords
+        return this.depths[z].quadrants[x][y]
+    }
+    getCurrentQuadrant() {
+        return this.getQuadrant(this.currentQuadrant)
     }
     render() {
-        this.children.forEach(key => {
+        UI.render()
+        this.currentQuadrant.bodies.forEach(key => {
             key.render()
         })
     }
     update() {
-        for (let i = this.children.length - 1; i >= 0; i--) {
+        let bodies = this.currentQuadrant.bodies
+        for (let i = bodies.length - 1; i >= 0; i--) {
             for (let j = i - 1; j >= 0; j--) {
-                if (this.children[i].canCollide && this.children[j].canCollide) {
-                    let collision = SAT(this.children[i], this.children[j])
+                if (bodies[i].canCollide && bodies[j].canCollide) {
+                    let collision = SAT(bodies[i], bodies[j])
                     if (collision) {
-                        this.children[j].collide(this.children[i])
-                        this.children[i].collide(this.children[j])
+                        bodies[j].collide(bodies[i])
+                        bodies[i].collide(bodies[j])
                     }
                 }
             }
         }
-        for (let i = this.children.length - 1; i >= 0; i--) {
-            if (this.children[i].shouldRemove) this.children.splice(i, 1)
-            else this.children[i].update()
+        for (let i = bodies.length - 1; i >= 0; i--) {
+            if (bodies[i].shouldRemove) bodies.splice(i, 1)
+            else bodies[i].update()
         }
 
     }
 }
-let world = new World()
+let world = new World(3, 3, 3)
 
-// world.addChild(sprite)
+// world.addChild(sprite)\
+const player = new Player(400, 200, 'goldenrod', 'player', world.currentCoords)
+const shadow = new Player(375, 500, 'purple', 'shadow', world.currentCoords)
+let enemy1 = new Enemy(500, 500, 40, world.currentCoords)
+let enemy2 = new Enemy(701, 500, 40, world.currentCoords)
+
+let playerMap = { shadow, player }
+let activeSprite = 'player'
+
 player.add()
 shadow.add()
 enemy1.add()
 enemy2.add()
-
 
 function SAT(body1, body2) {
     function getNormals(vertices) {

@@ -18,6 +18,14 @@ function upDownSwitch(a, b, c) {
     else if (keyPressed('down')) return b
     else return c
 }
+class Coords {
+    constructor(x, y, z) {
+        this.x = x
+        this.y = y
+        this.z = z
+    }
+}
+
 class Combo {
     constructor(steps, cooldown, timer) {
         this.steps = steps
@@ -48,7 +56,7 @@ class Combo {
 }
 
 class RectBody extends kontra.Sprite.class {
-    constructor(x, y, width, height) {
+    constructor(x, y, width, height, coords = new Coords(0, 0, 0)) {
         super();
         this.anchor = { x: 0.5, y: 0.5 };
         this.canCollide = true;
@@ -59,6 +67,7 @@ class RectBody extends kontra.Sprite.class {
         this.y = y;
         this.vertices = this.getVertices()
         this.shouldRemove = false
+        this.coords = coords
     }
     updateVertices() {
         this.vertices = this.getVertices()
@@ -89,7 +98,8 @@ class RectBody extends kontra.Sprite.class {
         return
     }
     add() {
-        world.addChild(this)
+        world.add(this.coords, this)
+
     }
     remove() {
         this.timeouts.forEach(key => clearTimeout(key))
@@ -110,6 +120,7 @@ class Combo1 extends Combo {
         let step3 = new Step(25, 1000)
         super([step1, step2, step3], 500, 4000);
         this.attackDistance = 50
+
     }
     attack(body) {
         let move = this.steps[this.currentStep].distance
@@ -120,24 +131,22 @@ class Combo1 extends Combo {
                 body.dx = direction.x * move
                 body.dy = direction.y * move
             }
-
             let sword = new Sword(swordOffset, body)
-            world.addChild(sword)
+            sword.add()
         }
         else {
             body.dx = leftRightSwitch(-move, move, 0)
             body.dy = upDownSwitch(-move, move, 0)
             let sword = new Sword(swordOffset, body)
-            sword.add()
-
+            sword.add(body.coords)
         }
     }
 }
 
 
 class Player extends RectBody {
-    constructor(x, y, color, name) {
-        super(x, y, 25, 25);
+    constructor(x, y, color, name, coords) {
+        super(x, y, 25, 25, coords);
         this.moveSpeed = 0.25
         this.speedLimit = 5
         this.baseSpeed = 2
@@ -226,17 +235,10 @@ class Player extends RectBody {
     }
 }
 
-const player = new Player(400, 200, 'goldenrod', 'player')
-const shadow = new Player(375, 500, 'purple', 'shadow')
-
 
 class Link extends RectBody {
     constructor(origin, dest) {
-        super();
-        this.width = 5;
-        this.height = distanceToTarget(origin, dest);
-        this.x = origin.x;
-        this.y = origin.y;
+        super(origin.x, origin.y, 5, distanceToTarget(origin, dest), origin.coords)
         this.anchor = { x: 0.5, y: 1 }
         this.rotation = angleToTarget(origin, dest);
         this.color = 'black';
@@ -249,8 +251,6 @@ class Link extends RectBody {
     }
 }
 
-let playerMap = { shadow, player }
-let activeSprite = 'player'
 
 let toggleShadow = str => str === 'player' ? 'shadow' : 'player'
 let switcheroo = () => {
@@ -271,7 +271,7 @@ class Sword extends RectBody {
         let y = body.y + offset.y * Math.sin(theta + swingOffset);
         let width = 100
         let height = 5
-        super(x, y, width, height);
+        super(x, y, width, height, body.coords);
         this.label = 'sword'
         this.offset = offset
         this.center = body
@@ -307,8 +307,8 @@ class Sword extends RectBody {
 }
 
 class Enemy extends RectBody {
-    constructor(x, y, maxHp) {
-        super(x, y, 50, 50);
+    constructor(x, y, maxHp, coords) {
+        super(x, y, 50, 50, coords);
         this.maxHp = maxHp
         this.hp = maxHp
         this.color = 'lavender'
@@ -319,24 +319,23 @@ class Enemy extends RectBody {
         if (body instanceof Player) {
             //another thing
         }
-        if (body.label === 'sword') {
+        if (body instanceof Sword) {
             this.setCollision(false)
             let damage = body.damage()
-            let sprite = new Damage(this, damage)
-            world.addChild(sprite)
-            this.hp -= body.damage()
+            new Damage(this, damage)
+            this.hp -= damage
             this.setCollision(true, 1000)
             if (this.hp <= 0) this.remove()
         }
     }
 }
 
-let enemy1 = new Enemy(500, 500, 40)
-let enemy2 = new Enemy(701, 500, 40)
+
 
 class Damage extends kontra.Sprite.class {
     constructor(body, damage) {
         super();
+        this.center = body
         this.x = body.x
         this.y = body.y
         this.radius = 10
@@ -346,19 +345,77 @@ class Damage extends kontra.Sprite.class {
         this.dx = kontra.randInt(-2, 2)
         this.dy = kontra.randInt(-5, -3) - 2
         this.ddy = 0.2
-
+        this.add()
+    }
+    add() {
+        world.add(this.center.coords, this)
     }
     draw() {
-        this.context.fillStyle = "rgba(255,0,0, " + this.opacity+ ")"
+        this.context.fillStyle = "rgba(255,0,0, " + this.opacity + ")"
         this.context.beginPath();
         this.context.font = "15px Arial";
         this.context.fillText(this.value, 10, 50);
-
     }
     update() {
         this.opacity -= 0.01
         this.advance()
-        if(this.opacity < 0) world.removeChild(this)
+        if (this.opacity < 0) this.shouldRemove = true
+    }
+}
+
+class Quadrant {
+    constructor(x, y, z) {
+        this.coords = new Coords(x, y, z)
+        this.bodies = []
+        this.width = 1000
+        this.height = 700
+        this.thickness = 5
+        this.topWall = new Wall(this.width / 2, this.thickness / 2, this.width, this.thickness)
+        this.leftWall = new Wall(this.thickness / 2, this.thickness + this.height / 2, this.thickness, this.height)
+        this.rightWall = new Wall(this.width - this.thickness / 2, this.height / 2 + this.thickness, this.thickness, this.height)
+        this.botWall = new Wall(this.width / 2, this.height + this.thickness/2, this.width, this.thickness)
+        this.add(this.topWall)
+        this.add(this.leftWall)
+        this.add(this.rightWall)
+        this.add(this.botWall)
+
+        // this.add(new Wall(this.thickness / 2, this.thickness + 0.01 + this.height / 2, this.thickness, this.height))
+
+        // this.add(new Wall(this.width/2, this.thickness/2 + this.height, this.width, this.thickness))
+        // this.add(new Wall(w/2, h/2, 5, height))
+        // this.add(new Wall(w/2 + width, h/2, 5, height))
+        // this.add(new Wall(w/2, h/2+ height, width, 5))
+
+
+
+    }
+    add(body) {
+        this.bodies.push(body)
+    }
+}
+
+
+class Wall extends RectBody {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        this.color = 'red'
+    }
+    collide(body) {
+        if (body instanceof Wall) return
+        console.log('colliing')
+    }
+}
+
+class Depth {
+    constructor(x, y, z) {
+        this.quadrants = []
+        for (let i = 0; i < x; i++) {
+            let column = []
+            for (let j = 0; j < y; j++) {
+                column.push(new Quadrant(i, j, z))
+            }
+            this.quadrants.push(column)
+        }
     }
 }
 
