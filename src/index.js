@@ -78,6 +78,8 @@ class World extends kontra.Sprite.class {
         }
         this.currentCoords = new Coords(0, 0, 0)
         this.currentQuadrant = this.getQuadrant(this.currentCoords)
+
+        this.travel(new Coords(0, 1, 0))
         UI.start()
     }
 
@@ -90,6 +92,10 @@ class World extends kontra.Sprite.class {
     }
     getCurrentQuadrant() {
         return this.getQuadrant(this.currentQuadrant)
+    }
+    travel(coords) {
+        this.currentCoords = coords
+        this.currentQuadrant = this.getQuadrant(coords)
     }
     render() {
         UI.render()

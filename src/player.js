@@ -167,6 +167,14 @@ class Player extends RectBody {
         this.combo.attack(this)
         this.combo.next()
     }
+    travel(coords) {
+        world.getQuadrant(coords).remove(this)
+        this.coords = coords
+        this.x = 20
+        this.y = 20
+        world.getQuadrant(coords).add(this)
+
+    }
     canAttack = () => keyPressed('shift') && !this.attackCooldown && this.released
     isActive = () => this.name === activeSprite
     reset() {
@@ -181,8 +189,6 @@ class Player extends RectBody {
         this.combo = null
         this.color = "goldenrod"
     }
-
-
     setReady(cooldown) {
         setTimeout(() => {
             this.attackCooldown = false
@@ -370,38 +376,49 @@ class Quadrant {
         this.width = 1000
         this.height = 700
         this.thickness = 5
-        this.topWall = new Wall(this.width / 2, this.thickness / 2, this.width, this.thickness)
-        this.leftWall = new Wall(this.thickness / 2, this.thickness + this.height / 2, this.thickness, this.height)
-        this.rightWall = new Wall(this.width - this.thickness / 2, this.height / 2 + this.thickness, this.thickness, this.height)
-        this.botWall = new Wall(this.width / 2, this.height + this.thickness/2, this.width, this.thickness)
+        this.setFrame()
+    }
+    add(body) {
+        this.bodies.push(body)
+    }
+    remove(body) {
+        for (let i = 0; i < this.bodies.length; i++) {
+            if (this.bodies[i] === body) {  
+                this.bodies.splice(i, 1)}
+        }
+    }
+    setFrame() {
+
+        this.topWall = new Wall(this.width / 2, this.thickness / 2, this.width, this.thickness, this.thickness)
+        this.leftWall = new Wall(this.thickness / 2, this.thickness + this.height / 2, this.thickness, this.height, this.thickness)
+        this.rightWall = new Wall(this.width - this.thickness / 2, this.height / 2 + this.thickness, this.thickness, this.height, this.thickness)
+        this.botWall = new Wall(this.width / 2, this.height + this.thickness / 2, this.width, this.thickness, this.thickness)
         this.add(this.topWall)
         this.add(this.leftWall)
         this.add(this.rightWall)
         this.add(this.botWall)
-
-        // this.add(new Wall(this.thickness / 2, this.thickness + 0.01 + this.height / 2, this.thickness, this.height))
-
-        // this.add(new Wall(this.width/2, this.thickness/2 + this.height, this.width, this.thickness))
-        // this.add(new Wall(w/2, h/2, 5, height))
-        // this.add(new Wall(w/2 + width, h/2, 5, height))
-        // this.add(new Wall(w/2, h/2+ height, width, 5))
-
-
-
-    }
-    add(body) {
-        this.bodies.push(body)
     }
 }
 
 
 class Wall extends RectBody {
-    constructor(x, y, width, height) {
+    constructor(x, y, width, height, thickness) {
         super(x, y, width, height);
+        this.thickness = thickness
         this.color = 'red'
     }
     collide(body) {
         if (body instanceof Wall) return
+        let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
+        if (this.height > this.width) body.x += inverseSpeed.x
+        else body.y += inverseSpeed.y
+
+        world.travel(new Coords(0, 0, 0))
+        player.travel(new Coords(0, 0, 0))
+
+
+        // body.y += this.thickness 
+        // body.y -= body.height/
         console.log('colliing')
     }
 }
