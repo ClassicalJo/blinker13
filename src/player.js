@@ -67,10 +67,12 @@ class RectBody extends kontra.Sprite.class {
         this.y = y;
         this.vertices = this.getVertices()
         this.coords = coords
+        this.invulnerable = false
     }
     updateVertices() {
         this.vertices = this.getVertices()
     }
+
     getVertices() {
         let halfWidth = this.width / 2
         let halfHeight = this.height / 2
@@ -104,7 +106,12 @@ class RectBody extends kontra.Sprite.class {
         world.add(this.coords, this)
 
     }
+    setInvulnerable(bool, time) {
+        if (time) this.timeouts.push(setTimeout(() => this.invulnerable = bool, time))
+        else this.invulnerable = bool
+    }
     remove() {
+        this.ttl = 0
         this.timeouts.forEach(key => clearTimeout(key))
     }
 }
@@ -216,17 +223,18 @@ class Player extends RectBody {
         this.advance()
     }
     collide(body) {
-        if (!this.canCollide) return
+        if (!this.canCollide || this.invulnerable) return 
         if (body instanceof Enemy) {
-            this.setCollision(false)
-            this.dy = -10
-            console.log('got hit')
-            this.setCollision(true, 1000)
+            console.log('colliding')
+            this.setInvulnerable(true)
+            let inverse = kontra.Vector(this.dx * -1, this.dy * -1).normalize()
+            this.dx = inverse.x * this.width || 0
+            this.dy = inverse.y * this.height || -this.height
+            this.setInvulnerable(false, 1000)
         }
     }
     update() {
         if (!this.isActive()) {
-            console.log('not active')
             return
         }
         if (this.shouldCancel()) this.cancel()
@@ -250,7 +258,6 @@ class Link extends RectBody {
         this.rotation = angleToTarget(origin, dest);
         this.color = 'black';
         this.ttl = 10
-
     }
     update() {
         this.ttl -= 1
@@ -273,9 +280,10 @@ let switcherooOnCooldown = false
 class Sword extends RectBody {
     constructor(offset, body) {
         let swingOffset = degToRad(135)
-        let x = body.x + offset.x * Math.cos(body.rotation + swingOffset);
-        let y = body.y + offset.y * Math.sin(body.rotation + swingOffset);
-        super(x, y, 100, 5, body.coords);
+        super(
+            getPointInCircle.x(body, offset.x, body.rotation + swingOffset),
+            getPointInCircle.y(body, offset.y, body.rotation + swingOffset),
+            100, 5, body.coords);
         this.ttl = 10
         this.label = 'sword'
         this.offset = offset
@@ -327,7 +335,7 @@ class Enemy extends RectBody {
             new Damage(this, damage)
             this.hp -= damage
             this.setCollision(true, 1000)
-            if (this.hp <= 0) this.ttl = 0
+            if (this.hp <= 0) this.remove()
         }
     }
 }
@@ -424,7 +432,7 @@ class Wall extends RectBody {
         if (body instanceof Player) {
             let target = { x: body.x, y: body.y }
             let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
-            
+
             if (this.height > this.width) {
                 target.x = body.x > 900 ? 50 : 950
                 target.y = body.y
@@ -442,7 +450,7 @@ class Wall extends RectBody {
                 player.travel(this.destiny)
                 shadow.travel(this.destiny)
             }
-            
+
         }
     }
 }

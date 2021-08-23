@@ -2,6 +2,10 @@ initKeys()
 keyMap['ControlLeft'] = 'ctrl'
 keyMap['ShiftLeft'] = 'shift'
 
+let getPointInCircle = {
+    x: (vector, r, theta) => vector.x + r * Math.cos(theta),
+    y: (vector, r, theta) => vector.y + r * Math.sin(theta),
+}
 
 bindKeys('ctrl', function () {
     if (switcherooOnCooldown) return
