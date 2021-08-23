@@ -272,18 +272,15 @@ let switcherooOnCooldown = false
 
 class Sword extends RectBody {
     constructor(offset, body) {
-        let theta = body.rotation
         let swingOffset = degToRad(135)
-        let x = body.x + offset.x * Math.cos(theta + swingOffset);
-        let y = body.y + offset.y * Math.sin(theta + swingOffset);
-        let width = 100
-        let height = 5
-        super(x, y, width, height, body.coords);
+        let x = body.x + offset.x * Math.cos(body.rotation + swingOffset);
+        let y = body.y + offset.y * Math.sin(body.rotation + swingOffset);
+        super(x, y, 100, 5, body.coords);
         this.ttl = 10
         this.label = 'sword'
         this.offset = offset
         this.center = body
-        this.rotation = theta + swingOffset
+        this.rotation = body.rotation + swingOffset
         this.color = 'red'
         this.swing = {
             should: true,
@@ -388,6 +385,13 @@ class Quadrant {
             }
         }
     }
+    clear() {
+        for (let i = 0; i < this.bodies.length; i++) {
+            if (this.bodies[i] instanceof Sword) {
+                this.bodies.splice(i, 1)
+            }
+        }
+    }
     setFrame() {
         let { x, y, z } = this.coords
         let [w, h, t] = [this.width, this.height, this.thickness]
@@ -418,38 +422,27 @@ class Wall extends RectBody {
     collide(body) {
         if (body instanceof Wall) return
         if (body instanceof Player) {
-            switch (this.height > this.width) {
-                case true: {
-                    if (this.boundaries.x()) {
-                        world.travel(this.destiny)
-                        let target = {
-                            x: body.x > 900 ? 50 : 950,
-                            y: body.y
-                        }
-                        player.setPosition(target.x, target.y)
-                        shadow.setPosition(target.x, target.y)
-                        player.travel(this.destiny)
-                        shadow.travel(this.destiny)
-                    }
-                    break;
-                }
-                default: {
-                    if (this.boundaries.y()) {
-                        world.travel(this.destiny)
-                        let target = {
-                            x: body.x,
-                            y: body.y > 650 ? 50 : 650
-                        }
-                        player.setPosition(target.x, target.y)
-                        shadow.setPosition(target.x, target.y)
-                        player.travel(this.destiny)
-                        shadow.travel(this.destiny)
-                    }
-                };
-            }
+            let target = { x: body.x, y: body.y }
             let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
-            if (this.height > this.width) body.x += inverseSpeed.x
-            else body.y += inverseSpeed.y
+            
+            if (this.height > this.width) {
+                target.x = body.x > 900 ? 50 : 950
+                target.y = body.y
+                body.x += inverseSpeed.x
+            }
+            else {
+                target.x = body.x
+                target.y = body.y > 650 ? 50 : 650
+                body.y += inverseSpeed.y
+            }
+            if (this.boundaries.x() && this.boundaries.y()) {
+                world.travel(this.destiny)
+                player.setPosition(target.x, target.y)
+                shadow.setPosition(target.x, target.y)
+                player.travel(this.destiny)
+                shadow.travel(this.destiny)
+            }
+            
         }
     }
 }

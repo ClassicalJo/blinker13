@@ -82,12 +82,9 @@ class World extends kontra.Sprite.class {
         return this.getQuadrant(this.currentQuadrant)
     }
     travel(coords) {
-        let previousQuadrant = this.currentQuadrant
+        this.currentQuadrant.clear()
         this.currentCoords = coords
         this.currentQuadrant = this.getQuadrant(coords)
-        for (let i = previousQuadrant.bodies.length - 1; i >= 0; i--) {
-            if (previousQuadrant.bodies[i] instanceof Sword) previousQuadrant.bodies.splice(i, 1)
-        }
     }
     render() {
         UI.render()
