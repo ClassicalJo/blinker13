@@ -50,15 +50,6 @@ function getDirection(body) {
         return directions[a + b]
     }
 }
-const sprite = kontra.Sprite({
-    x: 200,
-    y: 200,
-    anchor: { x: 0.5, y: 0.5 },
-    color: 'pink',
-    width: 50,
-    height: 50,
-})
-
 
 const loop = kontra.GameLoop({
     update: () => {
@@ -72,17 +63,17 @@ const loop = kontra.GameLoop({
 class World extends kontra.Sprite.class {
     constructor(x, y, z) {
         super();
-        this.depths = []
-        for (let i = 0; i < z; i++) {
-            this.depths.push(new Depth(x, y, i))
-        }
+        this.size = { x, y, z }
+        this.depths = this.createDepths(x, y, z)
         this.currentCoords = new Coords(0, 0, 0)
         this.currentQuadrant = this.getQuadrant(this.currentCoords)
-
-        this.travel(new Coords(0, 1, 0))
         UI.start()
     }
-
+    createDepths(x, y, z) {
+        let arr = []
+        for (let i = 0; i < z; i++) arr.push(new Depth(x, y, i))
+        return arr
+    }
     add(coords, body) {
         this.getQuadrant(coords).add(body)
     }
@@ -94,8 +85,12 @@ class World extends kontra.Sprite.class {
         return this.getQuadrant(this.currentQuadrant)
     }
     travel(coords) {
+        let previousQuadrant = this.currentQuadrant
         this.currentCoords = coords
         this.currentQuadrant = this.getQuadrant(coords)
+        for (let i = previousQuadrant.bodies.length - 1; i >= 0; i--) {
+            if (previousQuadrant.bodies[i] instanceof Sword) previousQuadrant.bodies.splice(i, 1)
+        }
     }
     render() {
         UI.render()
@@ -117,10 +112,9 @@ class World extends kontra.Sprite.class {
             }
         }
         for (let i = bodies.length - 1; i >= 0; i--) {
-            if (bodies[i].shouldRemove) bodies.splice(i, 1)
+            if (!bodies[i].isAlive()) bodies.splice(i, 1)
             else bodies[i].update()
         }
-
     }
 }
 let world = new World(3, 3, 3)

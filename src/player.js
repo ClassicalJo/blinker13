@@ -66,7 +66,6 @@ class RectBody extends kontra.Sprite.class {
         this.x = x;
         this.y = y;
         this.vertices = this.getVertices()
-        this.shouldRemove = false
         this.coords = coords
     }
     updateVertices() {
@@ -90,6 +89,10 @@ class RectBody extends kontra.Sprite.class {
         })
     }
 
+    setPosition(x, y) {
+        this.x = x
+        this.y = y
+    }
     setCollision(bool, time) {
         if (time) this.timeouts.push(setTimeout(() => this.canCollide = bool, time))
         else this.canCollide = bool
@@ -103,7 +106,6 @@ class RectBody extends kontra.Sprite.class {
     }
     remove() {
         this.timeouts.forEach(key => clearTimeout(key))
-        this.shouldRemove = true
     }
 }
 
@@ -170,10 +172,7 @@ class Player extends RectBody {
     travel(coords) {
         world.getQuadrant(coords).remove(this)
         this.coords = coords
-        this.x = 20
-        this.y = 20
         world.getQuadrant(coords).add(this)
-
     }
     canAttack = () => keyPressed('shift') && !this.attackCooldown && this.released
     isActive = () => this.name === activeSprite
@@ -278,6 +277,7 @@ class Sword extends RectBody {
         let width = 100
         let height = 5
         super(x, y, width, height, body.coords);
+        this.ttl = 10
         this.label = 'sword'
         this.offset = offset
         this.center = body
@@ -290,16 +290,14 @@ class Sword extends RectBody {
             duration: 10,
         }
     }
-    collide() {
-
-    }
     damage() {
         let min = 15
         let max = 20
         return kontra.randInt(min, max)
     }
     update() {
-        if (this.swing.should && this.swing.accumulated < this.swing.total) {
+        if (this.isAlive()) {
+            this.ttl -= 1
             let speed = this.swing.total / this.swing.duration
             this.rotation += speed
             this.swing.accumulated += speed
@@ -307,7 +305,6 @@ class Sword extends RectBody {
             this.y = this.center.y + this.offset.y * Math.sin(this.rotation)
             this.updateVertices()
         }
-        else this.remove()
     }
 
 }
@@ -331,7 +328,7 @@ class Enemy extends RectBody {
             new Damage(this, damage)
             this.hp -= damage
             this.setCollision(true, 1000)
-            if (this.hp <= 0) this.remove()
+            if (this.hp <= 0) this.ttl = 0
         }
     }
 }
@@ -344,6 +341,7 @@ class Damage extends kontra.Sprite.class {
         this.center = body
         this.x = body.x
         this.y = body.y
+        this.ttl = 100
         this.radius = 10
         this.fade = 1000
         this.value = damage
@@ -363,9 +361,9 @@ class Damage extends kontra.Sprite.class {
         this.context.fillText(this.value, 10, 50);
     }
     update() {
-        this.opacity -= 0.01
+        this.opacity -= .01
+        this.ttl -= 1
         this.advance()
-        if (this.opacity < 0) this.shouldRemove = true
     }
 }
 
@@ -383,16 +381,18 @@ class Quadrant {
     }
     remove(body) {
         for (let i = 0; i < this.bodies.length; i++) {
-            if (this.bodies[i] === body) {  
-                this.bodies.splice(i, 1)}
+            if (this.bodies[i] === body) {
+                this.bodies.splice(i, 1)
+            }
         }
     }
     setFrame() {
-
-        this.topWall = new Wall(this.width / 2, this.thickness / 2, this.width, this.thickness, this.thickness)
-        this.leftWall = new Wall(this.thickness / 2, this.thickness + this.height / 2, this.thickness, this.height, this.thickness)
-        this.rightWall = new Wall(this.width - this.thickness / 2, this.height / 2 + this.thickness, this.thickness, this.height, this.thickness)
-        this.botWall = new Wall(this.width / 2, this.height + this.thickness / 2, this.width, this.thickness, this.thickness)
+        let { x, y, z } = this.coords
+        let [w, h, t] = [this.width, this.height, this.thickness]
+        this.topWall = new Wall(w / 2, t / 2, w, t, t, new Coords(x, y - 1, z))
+        this.leftWall = new Wall(t / 2, t + h / 2, t, h, t, new Coords(x - 1, y, z))
+        this.rightWall = new Wall(w - t / 2, h / 2 + t, t, h, t, new Coords(x + 1, y, z))
+        this.botWall = new Wall(w / 2, h + t / 2, w, t, t, new Coords(x, y + 1, z))
         this.add(this.topWall)
         this.add(this.leftWall)
         this.add(this.rightWall)
@@ -402,24 +402,37 @@ class Quadrant {
 
 
 class Wall extends RectBody {
-    constructor(x, y, width, height, thickness) {
+    constructor(x, y, width, height, thickness, destiny) {
         super(x, y, width, height);
         this.thickness = thickness
         this.color = 'red'
+        this.destiny = destiny
     }
     collide(body) {
         if (body instanceof Wall) return
-        let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
-        if (this.height > this.width) body.x += inverseSpeed.x
-        else body.y += inverseSpeed.y
-
-        world.travel(new Coords(0, 0, 0))
-        player.travel(new Coords(0, 0, 0))
-
-
-        // body.y += this.thickness 
-        // body.y -= body.height/
-        console.log('colliing')
+        if (body instanceof Player) {
+            switch (this.height > this.width) {
+                case true: {
+                    if (this.destiny.x >= 0 && this.destiny.x < world.size.x) {
+                        player.setPosition(body.x > 500 ? 50 : 950, body.y)
+                        world.travel(this.destiny)
+                        player.travel(this.destiny)
+                    }
+                    break;
+                }
+                case false: {
+                    if (this.destiny.y >= 0 && this.destiny.y < world.size.y) {
+                        console.log(body.y)
+                        player.setPosition(body.x, body.y > 650 ? 50 : 650)
+                        world.travel(this.destiny)
+                        player.travel(this.destiny)
+                    }
+                } break;
+            }
+            let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
+            if (this.height > this.width) body.x += inverseSpeed.x
+            else body.y += inverseSpeed.y
+        }
     }
 }
 

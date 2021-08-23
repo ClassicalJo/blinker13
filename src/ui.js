@@ -21,7 +21,7 @@ let coord = (x, y) => kontra.Sprite({
         this.context.beginPath();
         this.context.fillText(`x: ${world.currentCoords.x}`, x, y);
         this.context.fillText(`y: ${world.currentCoords.y}`, x, y + 25);
-        this.context.fillText(`z: ${world.currentCoords.x}`, x, y + 50);
+        this.context.fillText(`z: ${world.currentCoords.z}`, x, y + 50);
     }
 })
 
