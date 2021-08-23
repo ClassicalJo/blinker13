@@ -22,9 +22,6 @@ let directions = {
     'leftup': kontra.Vector(-1, -1).normalize(),
 }
 
-function getMag(vector) {
-    return Math.sqrt(Math.pow(vector.x, 2) + Math.pow(vector.y, 2))
-}
 function getDirectionVector(body) {
     let vector = kontra.Vector(body.dx, body.dy)
     if (vector.x === 0 && vector.y === 0) return kontra.Vector(0, -1).normalize()
@@ -119,9 +116,9 @@ class World extends kontra.Sprite.class {
 }
 let world = new World(3, 3, 3)
 
-// world.addChild(sprite)\
 const player = new Player(400, 200, 'goldenrod', 'player', world.currentCoords)
 const shadow = new Player(375, 500, 'purple', 'shadow', world.currentCoords)
+
 let enemy1 = new Enemy(500, 500, 40, world.currentCoords)
 let enemy2 = new Enemy(701, 500, 40, world.currentCoords)
 

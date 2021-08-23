@@ -225,8 +225,10 @@ class Player extends RectBody {
         }
     }
     update() {
-        this.children.forEach(key => key.update())
-        if (!this.isActive()) return
+        if (!this.isActive()) {
+            console.log('not active')
+            return
+        }
         if (this.shouldCancel()) this.cancel()
         if (this.canAttack()) {
             if (this.combo === null) this.combo = new Combo1()
@@ -247,13 +249,13 @@ class Link extends RectBody {
         this.anchor = { x: 0.5, y: 1 }
         this.rotation = angleToTarget(origin, dest);
         this.color = 'black';
-        this.fadeout = 1000
-        this.disappear()
+        this.ttl = 10
+
     }
-    disappear() {
-        let timeout = setTimeout(() => this.remove(), this.fadeout)
-        this.timeouts.push(timeout)
+    update() {
+        this.ttl -= 1
     }
+
 }
 
 
@@ -407,27 +409,43 @@ class Wall extends RectBody {
         this.thickness = thickness
         this.color = 'red'
         this.destiny = destiny
+        this.boundaries = {
+            x: () => this.destiny.x >= 0 && this.destiny.x < world.size.x,
+            y: () => this.destiny.y >= 0 && this.destiny.y < world.size.y,
+        }
     }
+
     collide(body) {
         if (body instanceof Wall) return
         if (body instanceof Player) {
             switch (this.height > this.width) {
                 case true: {
-                    if (this.destiny.x >= 0 && this.destiny.x < world.size.x) {
-                        player.setPosition(body.x > 500 ? 50 : 950, body.y)
+                    if (this.boundaries.x()) {
                         world.travel(this.destiny)
+                        let target = {
+                            x: body.x > 900 ? 50 : 950,
+                            y: body.y
+                        }
+                        player.setPosition(target.x, target.y)
+                        shadow.setPosition(target.x, target.y)
                         player.travel(this.destiny)
+                        shadow.travel(this.destiny)
                     }
                     break;
                 }
-                case false: {
-                    if (this.destiny.y >= 0 && this.destiny.y < world.size.y) {
-                        console.log(body.y)
-                        player.setPosition(body.x, body.y > 650 ? 50 : 650)
+                default: {
+                    if (this.boundaries.y()) {
                         world.travel(this.destiny)
+                        let target = {
+                            x: body.x,
+                            y: body.y > 650 ? 50 : 650
+                        }
+                        player.setPosition(target.x, target.y)
+                        shadow.setPosition(target.x, target.y)
                         player.travel(this.destiny)
+                        shadow.travel(this.destiny)
                     }
-                } break;
+                };
             }
             let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
             if (this.height > this.width) body.x += inverseSpeed.x
