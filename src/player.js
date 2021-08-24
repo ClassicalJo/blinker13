@@ -57,14 +57,10 @@ class Combo {
 
 class RectBody extends kontra.Sprite.class {
     constructor(x, y, width, height, coords = new Coords(0, 0, 0)) {
-        super();
+        super({ x, y, width, height });
         this.anchor = { x: 0.5, y: 0.5 };
         this.canCollide = true;
         this.timeouts = [];
-        this.width = width;
-        this.height = height;
-        this.x = x;
-        this.y = y;
         this.vertices = this.getVertices()
         this.coords = coords
         this.invulnerable = false
@@ -74,14 +70,13 @@ class RectBody extends kontra.Sprite.class {
     }
 
     getVertices() {
-        let halfWidth = this.width / 2
-        let halfHeight = this.height / 2
-        let x = this.x
-        let y = this.y
-        let leftUp = { x: x - halfWidth, y: y - halfHeight }
-        let rightUp = { x: x + halfWidth, y: y - halfHeight }
-        let leftDown = { x: x - halfWidth, y: y + halfHeight }
-        let rightDown = { x: x + halfWidth, y: y + halfHeight }
+        let w = this.width / 2
+        let h = this.height / 2
+        let { x, y } = this
+        let leftUp = { x: x - w, y: y - h }
+        let rightUp = { x: x + w, y: y - h }
+        let leftDown = { x: x - w, y: y + h }
+        let rightDown = { x: x + w, y: y + h }
         let vertices = [leftUp, leftDown, rightDown, rightUp]
         return vertices.map(key => {
             let theta = this.rotation
@@ -94,6 +89,7 @@ class RectBody extends kontra.Sprite.class {
     setPosition(x, y) {
         this.x = x
         this.y = y
+        return this
     }
     setCollision(bool, time) {
         if (time) this.timeouts.push(setTimeout(() => this.canCollide = bool, time))
@@ -109,6 +105,11 @@ class RectBody extends kontra.Sprite.class {
     setInvulnerable(bool, time) {
         if (time) this.timeouts.push(setTimeout(() => this.invulnerable = bool, time))
         else this.invulnerable = bool
+    }
+    tempInvulnerable() {
+        this.invulnerable = true
+        this.timeouts.push(setTimeout(() => this.invulnerable = false, 1000))
+        return this
     }
     remove() {
         this.ttl = 0
@@ -220,7 +221,7 @@ class Player extends RectBody {
         if (shouldSlow(this.dy, this.speedLimit)) this.dy *= 0.9
         if (!keyPressed('up') && !keyPressed('down')) this.dy *= 0.95
         if (!keyPressed('left') && !keyPressed('right')) this.dx *= 0.95
-        this.advance()
+        this.isActive() && this.advance()
     }
     collide(body) {
         if (!this.canCollide || this.invulnerable) return
@@ -327,6 +328,7 @@ class Enemy extends RectBody {
             //another thing
         }
         if (body instanceof Sword) {
+            explosion(this.x, this.y)
             this.setCollision(false)
             let damage = body.damage()
             new Damage(this, damage)
@@ -373,8 +375,8 @@ class Quadrant {
     constructor(x, y, z) {
         this.coords = new Coords(x, y, z)
         this.bodies = []
-        this.width = 1000
-        this.height = 700
+        this.width = 1900
+        this.height = 1080
         this.thickness = 5
         this.frame = this.setFrame()
         this.frame.forEach(key => this.add(key))
@@ -409,7 +411,7 @@ class Quadrant {
             new Wall(w / 2, t / 2, w, t, t, new Coords(x, y - 1, z)),
             new Wall(t / 2, t + h / 2, t, h, t, new Coords(x - 1, y, z)),
             new Wall(w - t / 2, h / 2 + t, t, h, t, new Coords(x + 1, y, z)),
-            new Wall(w / 2, h + t / 2, w, t, t, new Coords(x, y + 1, z)),
+            new Wall(w / 2, h - t / 2, w, t, t, new Coords(x, y + 1, z)),
         ]
     }
 }
@@ -430,7 +432,7 @@ class Wall extends RectBody {
 
     collide(body) {
         if (body instanceof Wall) return
-        if (body instanceof Player) {
+        if (body instanceof Player && body.isActive()) {
             let target = { x: body.x, y: body.y }
             let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
 
@@ -446,10 +448,12 @@ class Wall extends RectBody {
             }
             if (this.boundaries.x() && this.boundaries.y() && this.enableTravel) {
                 world.travel(this.destiny)
-                player.setPosition(target.x, target.y)
-                shadow.setPosition(target.x, target.y)
-                player.travel(this.destiny)
-                shadow.travel(this.destiny)
+                player
+                    .setPosition(target.x, target.y)
+                    .travel(this.destiny)
+                shadow
+                    .setPosition(target.x, target.y)
+                    .travel(this.destiny)
             }
 
         }
@@ -473,11 +477,66 @@ class Stairs extends RectBody {
     constructor(x, y, coords, color) {
         super(x, y, 25, 25, coords);
         this.color = color
+
+    }
+    addDestiny(coords) {
+        this.destiny = coords
     }
     collide(body) {
-        if (body instanceof Player) {
-            console.log('you are in a stair')
+        if (body instanceof Player && this.destiny !== undefined && keyPressed('space')) {
+            world.travel(this.destiny.coords)
+            player
+                .setPosition(this.destiny.x, this.destiny.y + 50)
+                .tempInvulnerable()
+                .travel(this.destiny.coords)
+            shadow
+                .setPosition(this.destiny.x, this.destiny.y + 50)
+                .tempInvulnerable()
+                .travel(this.destiny.coords)
+
         }
 
     }
 }
+
+// class DiaBody extends RectBody {
+//     constructor(x, y, width, height) {
+//         super(x, y, width, height)
+//         this.color = 'yellow'
+//         this.vertices = this.getVertices()
+//     }
+//     getVertices() {
+//         let w = this.width / 2
+//         let h = this.height / 2
+//         let { x, y } = this
+//         let up = { x, y: y - h }
+//         let left = { x: x - w, y }
+//         let down = { x, y: y + h }
+//         let right = { x: x + w, y }
+//         let vertices = [left, down, right, up]
+//         // return vertices
+//         return vertices.map(key => {
+//             let theta = this.rotation
+//             let newX = (key.x - x) * Math.cos(theta) - (key.y - y) * Math.sin(theta) + x
+//             let newY = (key.x - x) * Math.sin(theta) + (key.y - y) * Math.cos(theta) + y
+//             return { x: newX, y: newY}
+//         })
+
+//     }
+//     update() {
+//         // this.rotation += degToRad(1)
+//     }
+//     draw() {
+//         this.context.beginPath()
+//         this.context.fillStyle = this.color
+//         this.context.moveTo(this.vertices[0].x - this.width, this.vertices[0].y - this.height)
+//         for (let i = 1; i < this.vertices.length; i++) {
+//             this.context.lineTo(this.vertices[i].x - this.width, this.vertices[i].y - this.height)
+//         }
+//         this.context.lineTo(this.vertices[0].x - this.width, this.vertices[0].y - this.height)
+//         this.context.fill()
+//     }
+//     collide(body) {
+//         console.log('colliding')
+//     }
+// }

@@ -3,13 +3,18 @@ html, body {
     height: 100vh;
     height: -webkit-fill-available;
     width: 100vw;
-    object-fit: contain;
+    
     margin: 0;
     overflow: hidden;
 }
 
+body {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
 canvas {
-    height: 1080;
-    width: 1900;
+    height:100vh;    
     
 }

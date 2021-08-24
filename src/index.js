@@ -55,34 +55,55 @@ function getDirection(body) {
 const loop = kontra.GameLoop({
     update: () => {
         world.update()
+        pool.update()
     },
     render: () => {
         world.render()
+        pool.render()
     },
 })
 
-class World extends kontra.Sprite.class {
+class World {
     constructor(x, y, z) {
-        super();
+        
         this.size = { x, y, z }
         this.depths = this.createDepths(x, y, z)
         this.currentCoords = new Coords(0, 0, 0)
         this.currentQuadrant = this.getQuadrant(this.currentCoords)
+        this.stairMap = {}
         UI.start()
-        console.log(this.depths)
         this.makeEnemies()
-        this.makeStairs(0)
+        this.makeStairs()
+
     }
     makeStairs() {
+        function getTwoRandInts(min, max) {
+            return [kontra.randInt(min, max), kontra.randInt(min, max)]
+        }
         for (let i = 0; i < this.depths.length; i++) {
-            let x1 = Math.floor(Math.random() * this.size.x)
-            let y1 = Math.floor(Math.random() * this.size.y)
-            let x2 = Math.floor(Math.random() * this.size.x)
-            let y2 = Math.floor(Math.random() * this.size.y)
-            let quadrant1 = this.depths[i].quadrants[x1][y1]
-            let quadrant2 = this.depths[i].quadrants[x2][y2]
-            quadrant1.add(new Stairs(200 + 200 * i, 200 + 100 * i, quadrant1.coords, "brown"))
-            quadrant2.add(new Stairs(300 + 200 * i, 300 + 100 * i, quadrant2.coords, "black"))
+            this.stairMap[i] = {}
+            let [x1, x2] = getTwoRandInts(0, this.size.x - 1)
+            let [y1, y2] = getTwoRandInts(0, this.size.y - 1)
+            let quadrant1 = this.getQuadrant(new Coords(x1, y1, i))
+            let quadrant2 = this.getQuadrant(new Coords(x2, y2, i))
+            if (i !== 0) {
+                let stairs = new Stairs(200 + 200 * i, 200 + 100 * i, quadrant1.coords, "brown")
+                this.stairMap[i].up = stairs
+                quadrant1.add(stairs)
+            }
+            if (i !== this.depths.length - 1) {
+                let stairs = new Stairs(300 + 200 * i, 300 + 100 * i, quadrant2.coords, "black")
+                this.stairMap[i].down = stairs
+                quadrant2.add(stairs)
+            }
+        }
+        for (let depth = 0; depth < Object.keys(this.stairMap).length; depth++) {
+            if (depth !== 0) {
+                this.stairMap[depth].up.addDestiny(this.stairMap[depth - 1].down)
+            }
+            if (depth !== this.depths.length - 1) {
+                this.stairMap[depth].down.addDestiny(this.stairMap[depth + 1].up)
+            }
 
         }
     }
@@ -116,7 +137,7 @@ class World extends kontra.Sprite.class {
         return this.depths[z].quadrants[x][y]
     }
     getCurrentQuadrant() {
-        return this.getQuadrant(this.currentQuadrant)
+        return this.getQuadrant(this.currentCoords)
     }
     travel(coords) {
         this.currentQuadrant.clear()
@@ -161,8 +182,7 @@ let activeSprite = 'player'
 
 player.add()
 shadow.add()
-enemy1.add()
-enemy2.add()
+console.log(world.currentQuadrant)
 
 function SAT(body1, body2) {
     function getNormals(vertices) {
