@@ -223,9 +223,8 @@ class Player extends RectBody {
         this.advance()
     }
     collide(body) {
-        if (!this.canCollide || this.invulnerable) return 
+        if (!this.canCollide || this.invulnerable) return
         if (body instanceof Enemy) {
-            console.log('colliding')
             this.setInvulnerable(true)
             let inverse = kontra.Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
@@ -234,12 +233,10 @@ class Player extends RectBody {
         }
     }
     update() {
-        if (!this.isActive()) {
-            return
-        }
+        if (!this.isActive()) return
         if (this.shouldCancel()) this.cancel()
         if (this.canAttack()) {
-            if (this.combo === null) this.combo = new Combo1()
+            if (!this.combo) this.combo = new Combo1()
             this.attack()
             if (this.combo.shouldReset()) this.reset()
             else this.setReady(this.combo.cooldown)
@@ -349,8 +346,6 @@ class Damage extends kontra.Sprite.class {
         this.x = body.x
         this.y = body.y
         this.ttl = 100
-        this.radius = 10
-        this.fade = 1000
         this.value = damage
         this.color = 'red'
         this.dx = kontra.randInt(-2, 2)
@@ -381,7 +376,14 @@ class Quadrant {
         this.width = 1000
         this.height = 700
         this.thickness = 5
-        this.setFrame()
+        this.frame = this.setFrame()
+        this.frame.forEach(key => this.add(key))
+    }
+    close() {
+        this.frame.forEach(key => key.enableTravel = false)
+    }
+    open() {
+        this.frame.forEach(key => key.enableTravel = true)
     }
     add(body) {
         this.bodies.push(body)
@@ -403,14 +405,12 @@ class Quadrant {
     setFrame() {
         let { x, y, z } = this.coords
         let [w, h, t] = [this.width, this.height, this.thickness]
-        this.topWall = new Wall(w / 2, t / 2, w, t, t, new Coords(x, y - 1, z))
-        this.leftWall = new Wall(t / 2, t + h / 2, t, h, t, new Coords(x - 1, y, z))
-        this.rightWall = new Wall(w - t / 2, h / 2 + t, t, h, t, new Coords(x + 1, y, z))
-        this.botWall = new Wall(w / 2, h + t / 2, w, t, t, new Coords(x, y + 1, z))
-        this.add(this.topWall)
-        this.add(this.leftWall)
-        this.add(this.rightWall)
-        this.add(this.botWall)
+        return [
+            new Wall(w / 2, t / 2, w, t, t, new Coords(x, y - 1, z)),
+            new Wall(t / 2, t + h / 2, t, h, t, new Coords(x - 1, y, z)),
+            new Wall(w - t / 2, h / 2 + t, t, h, t, new Coords(x + 1, y, z)),
+            new Wall(w / 2, h + t / 2, w, t, t, new Coords(x, y + 1, z)),
+        ]
     }
 }
 
@@ -421,6 +421,7 @@ class Wall extends RectBody {
         this.thickness = thickness
         this.color = 'red'
         this.destiny = destiny
+        this.enableTravel = true
         this.boundaries = {
             x: () => this.destiny.x >= 0 && this.destiny.x < world.size.x,
             y: () => this.destiny.y >= 0 && this.destiny.y < world.size.y,
@@ -443,7 +444,7 @@ class Wall extends RectBody {
                 target.y = body.y > 650 ? 50 : 650
                 body.y += inverseSpeed.y
             }
-            if (this.boundaries.x() && this.boundaries.y()) {
+            if (this.boundaries.x() && this.boundaries.y() && this.enableTravel) {
                 world.travel(this.destiny)
                 player.setPosition(target.x, target.y)
                 shadow.setPosition(target.x, target.y)
@@ -468,3 +469,15 @@ class Depth {
     }
 }
 
+class Stairs extends RectBody {
+    constructor(x, y, coords, color) {
+        super(x, y, 25, 25, coords);
+        this.color = color
+    }
+    collide(body) {
+        if (body instanceof Player) {
+            console.log('you are in a stair')
+        }
+
+    }
+}

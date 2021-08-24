@@ -69,6 +69,39 @@ class World extends kontra.Sprite.class {
         this.currentCoords = new Coords(0, 0, 0)
         this.currentQuadrant = this.getQuadrant(this.currentCoords)
         UI.start()
+        console.log(this.depths)
+        this.makeEnemies()
+        this.makeStairs(0)
+    }
+    makeStairs() {
+        for (let i = 0; i < this.depths.length; i++) {
+            let x1 = Math.floor(Math.random() * this.size.x)
+            let y1 = Math.floor(Math.random() * this.size.y)
+            let x2 = Math.floor(Math.random() * this.size.x)
+            let y2 = Math.floor(Math.random() * this.size.y)
+            let quadrant1 = this.depths[i].quadrants[x1][y1]
+            let quadrant2 = this.depths[i].quadrants[x2][y2]
+            quadrant1.add(new Stairs(200 + 200 * i, 200 + 100 * i, quadrant1.coords, "brown"))
+            quadrant2.add(new Stairs(300 + 200 * i, 300 + 100 * i, quadrant2.coords, "black"))
+
+        }
+    }
+    makeEnemies() {
+        this.depths
+            .map(key => key.quadrants)
+            .flat()
+            .flat()
+            .forEach(key => {
+                if (Math.random() > 0.4) {
+                    key.add(new Enemy(
+                        Math.random() * 900 + 50,
+                        Math.random() * 450 + 50,
+                        Math.random() * 40 + 10,
+                        key.coords
+                    ))
+                }
+            })
+
     }
     createDepths(x, y, z) {
         let arr = []
