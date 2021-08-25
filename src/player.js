@@ -221,6 +221,7 @@ class Player extends RectBody {
         if (shouldSlow(this.dy, this.speedLimit)) this.dy *= 0.9
         if (!keyPressed('up') && !keyPressed('down')) this.dy *= 0.95
         if (!keyPressed('left') && !keyPressed('right')) this.dx *= 0.95
+        smoke(this)
         this.isActive() && this.advance()
     }
     collide(body) {
@@ -322,19 +323,21 @@ class Enemy extends RectBody {
         this.color = 'lavender'
         this.label = 'enemy'
     }
-
+    die() {
+        explosion(this.x, this.y)
+        this.remove()
+    }
     collide(body) {
         if (body instanceof Player) {
             //another thing
         }
         if (body instanceof Sword) {
-            explosion(this.x, this.y)
             this.setCollision(false)
             let damage = body.damage()
             new Damage(this, damage)
             this.hp -= damage
             this.setCollision(true, 1000)
-            if (this.hp <= 0) this.remove()
+            this.hp <= 0 && this.die()
         }
     }
 }
@@ -405,13 +408,21 @@ class Quadrant {
         }
     }
     setFrame() {
-        let { x, y, z } = this.coords
         let [w, h, t] = [this.width, this.height, this.thickness]
+        let validDestiny = () => {
+            let { x, y, z } = this.coords
+            let up = y - 1 >= 0 ? new Coords(x, y - 1, z) : null
+            let left = x - 1 >= 0 ? new Coords(x - 1, y, z) : null
+            let down = y + 1 < WORLDY ? new Coords(x, y + 1, z) : null
+            let right = x + 1 < WORLDX ? new Coords(x + 1, y, z) : null
+            return [up, left, down, right]
+        }
+        let [up, left, down, right] = validDestiny(this.coords)
         return [
-            new Wall(w / 2, t / 2, w, t, t, new Coords(x, y - 1, z)),
-            new Wall(t / 2, t + h / 2, t, h, t, new Coords(x - 1, y, z)),
-            new Wall(w - t / 2, h / 2 + t, t, h, t, new Coords(x + 1, y, z)),
-            new Wall(w / 2, h - t / 2, w, t, t, new Coords(x, y + 1, z)),
+            new Wall(w / 2, t / 2, w, t, t, up),
+            new Wall(t / 2, t + h / 2, t, h, t, left),
+            new Wall(w - t / 2, h / 2 + t, t, h, t, right),
+            new Wall(w / 2, h - t / 2, w, t, t, down),
         ]
     }
 }
@@ -421,13 +432,10 @@ class Wall extends RectBody {
     constructor(x, y, width, height, thickness, destiny) {
         super(x, y, width, height);
         this.thickness = thickness
-        this.color = 'red'
         this.destiny = destiny
         this.enableTravel = true
-        this.boundaries = {
-            x: () => this.destiny.x >= 0 && this.destiny.x < world.size.x,
-            y: () => this.destiny.y >= 0 && this.destiny.y < world.size.y,
-        }
+        this.color = this.destiny ? 'red' : 'blue'
+
     }
 
     collide(body) {
@@ -446,7 +454,7 @@ class Wall extends RectBody {
                 target.y = body.y > 650 ? 50 : 650
                 body.y += inverseSpeed.y
             }
-            if (this.boundaries.x() && this.boundaries.y() && this.enableTravel) {
+            if (this.destiny && this.enableTravel) {
                 world.travel(this.destiny)
                 player
                     .setPosition(target.x, target.y)

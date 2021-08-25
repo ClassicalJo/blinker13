@@ -1,4 +1,9 @@
 initKeys()
+
+const WORLDX = 3
+const WORLDY = 3
+const WORLDZ = 3
+
 keyMap['ControlLeft'] = 'ctrl'
 keyMap['ShiftLeft'] = 'shift'
 
@@ -52,34 +57,25 @@ function getDirection(body) {
     }
 }
 
-const loop = kontra.GameLoop({
-    update: () => {
-        world.update()
-        pool.update()
-    },
-    render: () => {
-        world.render()
-        pool.render()
-    },
-})
-
-class World {
+class World extends kontra.Sprite.class {
     constructor(x, y, z) {
-        
-        this.size = { x, y, z }
+        super();
+        this.size = { x: WORLDX, y: WORLDY, z: WORLDZ }
         this.depths = this.createDepths(x, y, z)
         this.currentCoords = new Coords(0, 0, 0)
         this.currentQuadrant = this.getQuadrant(this.currentCoords)
         this.stairMap = {}
-        UI.start()
+        this.width = this.context.canvas.width
+        this.height = this.context.canvas.height
         this.makeEnemies()
         this.makeStairs()
-
+        UI.start()
     }
     makeStairs() {
         function getTwoRandInts(min, max) {
-            return [kontra.randInt(min, max), kontra.randInt(min, max)]
+            return [randInt(min, max), randInt(min, max)]
         }
+        let offset = 100
         for (let i = 0; i < this.depths.length; i++) {
             this.stairMap[i] = {}
             let [x1, x2] = getTwoRandInts(0, this.size.x - 1)
@@ -87,12 +83,12 @@ class World {
             let quadrant1 = this.getQuadrant(new Coords(x1, y1, i))
             let quadrant2 = this.getQuadrant(new Coords(x2, y2, i))
             if (i !== 0) {
-                let stairs = new Stairs(200 + 200 * i, 200 + 100 * i, quadrant1.coords, "brown")
+                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant1.coords, "brown")
                 this.stairMap[i].up = stairs
                 quadrant1.add(stairs)
             }
             if (i !== this.depths.length - 1) {
-                let stairs = new Stairs(300 + 200 * i, 300 + 100 * i, quadrant2.coords, "black")
+                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "black")
                 this.stairMap[i].down = stairs
                 quadrant2.add(stairs)
             }
@@ -140,6 +136,7 @@ class World {
         return this.getQuadrant(this.currentCoords)
     }
     travel(coords) {
+        pool.clear()
         this.currentQuadrant.clear()
         this.currentCoords = coords
         this.currentQuadrant = this.getQuadrant(coords)
@@ -169,7 +166,19 @@ class World {
         }
     }
 }
+
 let world = new World(3, 3, 3)
+const loop = kontra.GameLoop({
+    update: () => {
+        scene.update()
+        pool.update()
+    },
+    render: () => {
+        scene.render()
+        pool.render()
+    },
+})
+
 
 const player = new Player(400, 200, 'goldenrod', 'player', world.currentCoords)
 const shadow = new Player(375, 500, 'purple', 'shadow', world.currentCoords)
@@ -180,63 +189,15 @@ let enemy2 = new Enemy(701, 500, 40, world.currentCoords)
 let playerMap = { shadow, player }
 let activeSprite = 'player'
 
+const scene = kontra.Scene({
+    id: 'world',
+    children: [world],
+})
+
+
 player.add()
 shadow.add()
-console.log(world.currentQuadrant)
 
-function SAT(body1, body2) {
-    function getNormals(vertices) {
-        let axes = []
-        for (let i = 0; i < vertices.length; i++) {
-            let p1 = kontra.Vector(vertices[i].x, vertices[i].y)
-            let next = (i + 1 === vertices.length) ? 0 : i + 1
-            let p2 = kontra.Vector(vertices[next].x, vertices[next].y)
-            let edge = p1.subtract(p2)
-            let normal = { x: edge.y, y: -edge.x }
-            axes.push(normal)
-        }
-        return axes
-    }
-
-    function getProjection(axis, vertices) {
-        let vector = kontra.Vector(axis.x, axis.y)
-        let min = vector.dot(vertices[0])
-        let max = min
-        for (let i = 1; i < vertices.length; i++) {
-            let p = vector.dot(vertices[i])
-            if (p < min) {
-                min = p
-            } else if (p > max) {
-                max = p
-            }
-        }
-        return {
-            min,
-            max,
-            overlap: function (projection) {
-                return !(min > projection.max || projection.min > max)
-            }
-        }
-    }
-
-    let axes1 = getNormals(body1.vertices)
-    let axes2 = getNormals(body2.vertices)
-
-
-    for (let i = 0; i < axes1.length; i++) {
-        let axis = axes1[i]
-        let p1 = getProjection(axis, body1.vertices)
-        let p2 = getProjection(axis, body2.vertices)
-        if (!p1.overlap(p2)) return false
-    }
-    for (let i = 0; i < axes2.length; i++) {
-        let axis = axes2[i]
-        let p1 = getProjection(axis, body1.vertices)
-        let p2 = getProjection(axis, body2.vertices)
-        if (!p1.overlap(p2)) return false
-    }
-    return true
-}
 
 loop.start()
 
