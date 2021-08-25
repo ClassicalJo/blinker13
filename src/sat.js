@@ -36,7 +36,6 @@ function SAT(body1, body2) {
     let axes1 = getNormals(body1.vertices)
     let axes2 = getNormals(body2.vertices)
 
-
     for (let i = 0; i < axes1.length; i++) {
         let axis = axes1[i]
         let p1 = getProjection(axis, body1.vertices)

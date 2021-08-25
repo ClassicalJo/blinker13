@@ -1,9 +1,10 @@
 initKeys()
 
-const WORLDX = 3
-const WORLDY = 3
-const WORLDZ = 3
-
+const WORLD_X = 3
+const WORLD_Y = 3
+const WORLD_Z = 3
+const WORLD_WIDTH = document.querySelector('canvas').width
+const WORLD_HEIGHT = document.querySelector('canvas').height
 keyMap['ControlLeft'] = 'ctrl'
 keyMap['ShiftLeft'] = 'shift'
 
@@ -60,13 +61,13 @@ function getDirection(body) {
 class World extends kontra.Sprite.class {
     constructor(x, y, z) {
         super();
-        this.size = { x: WORLDX, y: WORLDY, z: WORLDZ }
+        this.size = { x: WORLD_X, y: WORLD_Y, z: WORLD_Z }
         this.depths = this.createDepths(x, y, z)
         this.currentCoords = new Coords(0, 0, 0)
         this.currentQuadrant = this.getQuadrant(this.currentCoords)
         this.stairMap = {}
-        this.width = this.context.canvas.width
-        this.height = this.context.canvas.height
+        this.width = WORLD_WIDTH
+        this.height = WORLD_HEIGHT
         this.makeEnemies()
         this.makeStairs()
         UI.start()
@@ -189,9 +190,15 @@ let enemy2 = new Enemy(701, 500, 40, world.currentCoords)
 let playerMap = { shadow, player }
 let activeSprite = 'player'
 
+let background = kontra.Sprite({
+    width: world.width,
+    height: world.height,
+    color: 'black',
+})
+
 const scene = kontra.Scene({
     id: 'world',
-    children: [world],
+    children: [ background, world],
 })
 
 

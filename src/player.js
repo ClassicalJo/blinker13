@@ -352,7 +352,7 @@ class Damage extends kontra.Sprite.class {
         this.y = body.y
         this.ttl = 100
         this.value = damage
-        this.color = 'red'
+        this.color = 'white'
         this.dx = kontra.randInt(-2, 2)
         this.dy = kontra.randInt(-5, -3) - 2
         this.ddy = 0.2
@@ -362,9 +362,9 @@ class Damage extends kontra.Sprite.class {
         world.add(this.center.coords, this)
     }
     draw() {
-        this.context.fillStyle = "rgba(255,0,0, " + this.opacity + ")"
+        this.context.fillStyle = this.color
         this.context.beginPath();
-        this.context.font = "15px Arial";
+        this.context.font = "32px Roboto";
         this.context.fillText(this.value, 10, 50);
     }
     update() {
@@ -378,8 +378,8 @@ class Quadrant {
     constructor(x, y, z) {
         this.coords = new Coords(x, y, z)
         this.bodies = []
-        this.width = 1900
-        this.height = 1080
+        this.width = WORLD_WIDTH
+        this.height = WORLD_HEIGHT
         this.thickness = 5
         this.frame = this.setFrame()
         this.frame.forEach(key => this.add(key))
@@ -413,8 +413,8 @@ class Quadrant {
             let { x, y, z } = this.coords
             let up = y - 1 >= 0 ? new Coords(x, y - 1, z) : null
             let left = x - 1 >= 0 ? new Coords(x - 1, y, z) : null
-            let down = y + 1 < WORLDY ? new Coords(x, y + 1, z) : null
-            let right = x + 1 < WORLDX ? new Coords(x + 1, y, z) : null
+            let down = y + 1 < WORLD_Y ? new Coords(x, y + 1, z) : null
+            let right = x + 1 < WORLD_X ? new Coords(x + 1, y, z) : null
             return [up, left, down, right]
         }
         let [up, left, down, right] = validDestiny(this.coords)
@@ -435,7 +435,7 @@ class Wall extends RectBody {
         this.destiny = destiny
         this.enableTravel = true
         this.color = this.destiny ? 'red' : 'blue'
-
+        this.opacity = 0.7
     }
 
     collide(body) {
@@ -506,6 +506,7 @@ class Stairs extends RectBody {
     }
 }
 
+
 // class DiaBody extends RectBody {
 //     constructor(x, y, width, height) {
 //         super(x, y, width, height)
@@ -547,3 +548,4 @@ class Stairs extends RectBody {
 //         console.log('colliding')
 //     }
 // }
+
