@@ -443,15 +443,14 @@ class Wall extends RectBody {
         if (body instanceof Player && body.isActive()) {
             let target = { x: body.x, y: body.y }
             let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
-
+            let min = 50
+            let max = { x: world.width - min, y: world.height - min }
             if (this.height > this.width) {
-                target.x = body.x > 900 ? 50 : 950
-                target.y = body.y
+                target.x = body.x > max.x ? min : max.x
                 body.x += inverseSpeed.x
             }
             else {
-                target.x = body.x
-                target.y = body.y > 650 ? 50 : 650
+                target.y = body.y > max.y ? min: max.y
                 body.y += inverseSpeed.y
             }
             if (this.destiny && this.enableTravel) {
