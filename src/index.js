@@ -168,6 +168,7 @@ class World extends kontra.Sprite.class {
     }
 }
 
+
 let world = new World(3, 3, 3)
 const loop = kontra.GameLoop({
     update: () => {
@@ -195,10 +196,53 @@ let background = kontra.Sprite({
     height: world.height,
     color: 'black',
 })
+let spaceGas = (y, color) => kontra.Sprite({
+    y,
+    x: Math.random() * -200,
+    width: world.width * 2,
+    height: world.height,
+    color: color,
+    opacity: 0.01,
+    dx: -1 - Math.random() * 2,
+    // dx: randInt(-10, -0.5),
+    render: function () {
+        this.context.beginPath();
+        this.context.fillStyle = this.color
+        this.context.moveTo(0, 0)
+        let heightWave = this.height / 4
+        let widthWave = 1900 / 4
+        for (let i = 0; i < this.width; i += widthWave * 4) {
+            this.context.bezierCurveTo(i + widthWave, -heightWave, i + widthWave, -heightWave, i + widthWave * 2, 0);
+            this.context.bezierCurveTo(i + widthWave * 3, heightWave, i + widthWave * 3, heightWave, i + widthWave * 4, 0);
+        }
 
+        this.context.lineTo(this.width, 0)
+        this.context.lineTo(this.width, this.height / 2)
+        this.context.lineTo(0, this.height / 2)
+        this.context.lineTo(0, 0)
+        this.context.fill()
+        this.context.beginPath()
+        this.context.moveTo(this.width, this.height / 2)
+        this.context.lineTo(0, this.height / 2)
+        this.context.lineTo(0, this.height)
+        for (let i = 0; i < this.width; i += widthWave * 4) {
+            this.context.bezierCurveTo(i + widthWave, this.height - heightWave, i + widthWave, this.height - heightWave, i + widthWave * 2, this.height);
+            this.context.bezierCurveTo(i + widthWave * 3, this.height + heightWave, i + widthWave * 3, this.height + heightWave, i + widthWave * 4, this.height);
+        }
+        this.context.lineTo(this.width, this.height / 2)
+        this.context.fill()
+    },
+    update: function () {
+        this.advance()
+        if (this.x < -world.width) this.x = 0
+
+    }
+
+})
 const scene = kontra.Scene({
     id: 'world',
-    children: [ background, world],
+    // children: [background, spaceGas(50, 'red'), world],
+    children: [background, spaceGas(-100, 'red'), spaceGas(0, 'aliceblue'), spaceGas(100, 'blue'), world],
 })
 
 

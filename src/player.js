@@ -64,6 +64,7 @@ class RectBody extends kontra.Sprite.class {
         this.vertices = this.getVertices()
         this.coords = coords
         this.invulnerable = false
+        this.label = 'RectBody'
     }
     updateVertices() {
         this.vertices = this.getVertices()
@@ -344,6 +345,7 @@ class Enemy extends RectBody {
 
 
 
+
 class Damage extends kontra.Sprite.class {
     constructor(body, damage) {
         super();
@@ -436,6 +438,7 @@ class Wall extends RectBody {
         this.enableTravel = true
         this.color = this.destiny ? 'red' : 'blue'
         this.opacity = 0.7
+        this.label = 'wall'
     }
 
     collide(body) {
@@ -484,6 +487,7 @@ class Stairs extends RectBody {
     constructor(x, y, coords, color) {
         super(x, y, 25, 25, coords);
         this.color = color
+        this.label = 'stairs'
 
     }
     addDestiny(coords) {

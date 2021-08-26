@@ -38,7 +38,7 @@ let smoke = body => {
         pool.get({
             x: body.x,
             y: body.y,
-            opacity: 1,
+            opacity: 0.5,
             // color: 'black',
             color: ['silver', 'aliceblue', 'beige'][randInt(0, 2)],
             radius: 10,
