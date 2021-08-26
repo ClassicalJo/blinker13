@@ -196,53 +196,46 @@ let background = kontra.Sprite({
     height: world.height,
     color: 'black',
 })
-let spaceGas = (y, color) => kontra.Sprite({
+let spaceGas = (x, y, speed, color) => kontra.Sprite({
+    x,
     y,
-    x: Math.random() * -200,
-    width: world.width * 2,
+    width: world.width * 4,
     height: world.height,
     color: color,
-    opacity: 0.01,
-    dx: -1 - Math.random() * 2,
-    // dx: randInt(-10, -0.5),
+    opacity: .02,
+    dx: speed,
     render: function () {
         this.context.beginPath();
         this.context.fillStyle = this.color
         this.context.moveTo(0, 0)
-        let heightWave = this.height / 4
-        let widthWave = 1900 / 4
-        for (let i = 0; i < this.width; i += widthWave * 4) {
-            this.context.bezierCurveTo(i + widthWave, -heightWave, i + widthWave, -heightWave, i + widthWave * 2, 0);
-            this.context.bezierCurveTo(i + widthWave * 3, heightWave, i + widthWave * 3, heightWave, i + widthWave * 4, 0);
-        }
-
-        this.context.lineTo(this.width, 0)
-        this.context.lineTo(this.width, this.height / 2)
-        this.context.lineTo(0, this.height / 2)
-        this.context.lineTo(0, 0)
-        this.context.fill()
-        this.context.beginPath()
-        this.context.moveTo(this.width, this.height / 2)
-        this.context.lineTo(0, this.height / 2)
-        this.context.lineTo(0, this.height)
-        for (let i = 0; i < this.width; i += widthWave * 4) {
-            this.context.bezierCurveTo(i + widthWave, this.height - heightWave, i + widthWave, this.height - heightWave, i + widthWave * 2, this.height);
-            this.context.bezierCurveTo(i + widthWave * 3, this.height + heightWave, i + widthWave * 3, this.height + heightWave, i + widthWave * 4, this.height);
-        }
-        this.context.lineTo(this.width, this.height / 2)
+        let heightWave = this.height / 2
+        let widthWave = this.width / 8
+        this.context.bezierCurveTo(widthWave, -heightWave, widthWave, -heightWave, widthWave * 2, 0);
+        this.context.bezierCurveTo(widthWave * 3, heightWave, widthWave * 3, heightWave, widthWave * 4, 0);
+        this.context.bezierCurveTo(widthWave * 5, -heightWave, widthWave * 5, -heightWave, widthWave * 6, 0);
+        this.context.lineTo(widthWave * 6, this.height)
+        this.context.bezierCurveTo(widthWave * 5, this.height + heightWave, widthWave * 5, this.height + heightWave, widthWave * 4, this.height);
+        this.context.bezierCurveTo(widthWave * 3, this.height - heightWave, widthWave * 3, this.height - heightWave, widthWave * 2, this.height);
+        this.context.bezierCurveTo(widthWave, this.height + heightWave, widthWave, this.height + heightWave, 0, this.height);
         this.context.fill()
     },
     update: function () {
         this.advance()
-        if (this.x < -world.width) this.x = 0
+        if (this.x < - this.width / 2) this.x = 0
 
     }
 
 })
 const scene = kontra.Scene({
     id: 'world',
-    // children: [background, spaceGas(50, 'red'), world],
-    children: [background, spaceGas(-100, 'red'), spaceGas(0, 'aliceblue'), spaceGas(100, 'blue'), world],
+    // children: [background, spaceGas(0, -400, -10, 'red'), world],
+    children: [
+        background,
+        spaceGas(-1300, -500, -1, 'darkred'),
+        spaceGas(-200, 500, -2.5, 'darkblue'),
+        spaceGas(-1000, 800, -2, 'gray'),
+        spaceGas(0, 0, -.5, 'purple'),
+        world],
 })
 
 

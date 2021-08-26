@@ -253,14 +253,25 @@ class Player extends RectBody {
 
 class Link extends RectBody {
     constructor(origin, dest) {
-        super(origin.x, origin.y, 5, distanceToTarget(origin, dest), origin.coords)
-        this.anchor = { x: 0.5, y: 1 }
-        this.rotation = angleToTarget(origin, dest);
-        this.color = 'black';
-        this.ttl = 10
+        super(origin.x, origin.y, 5, 5, origin.coords)
+        this.radius = 100;
+        this.color = 'white';
+        this.ttl = 100
+        let distance = distanceToTarget(origin, dest) / 10
+        let theta = angleToTarget(origin, dest)
+        this.dx = distance * Math.cos(theta)
+        this.dy = distance * Math.sin(theta)
+        // this.dx = distanceToTarget(origin, dest)/10 * Math.cos(angleToTarget(origin, dest)).x
+    }
+    render() {
+        this.context.fillStyle = this.color;
+        this.context.beginPath();
+        this.context.arc(0, 0, this.radius, 0, 2 * Math.PI);
+        this.context.fill();
     }
     update() {
         this.ttl -= 1
+        this.advance()
     }
 
 }
@@ -453,7 +464,7 @@ class Wall extends RectBody {
                 body.x += inverseSpeed.x
             }
             else {
-                target.y = body.y > max.y ? min: max.y
+                target.y = body.y > max.y ? min : max.y
                 body.y += inverseSpeed.y
             }
             if (this.destiny && this.enableTravel) {
