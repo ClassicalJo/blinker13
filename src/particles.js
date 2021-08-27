@@ -34,17 +34,16 @@ let explosion = (x, y) => {
 let smoke = body => {
     if (body.dx == 0 && body.dy == 0) return
     let speed = kontra.Vector(body.dx * -1, body.dy * -1).normalize()
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
         pool.get({
-            x: body.x,
-            y: body.y,
-            opacity: 0.5,
-            // color: 'black',
-            color: ['silver', 'aliceblue', 'beige'][randInt(0, 2)],
+            x: body.x + randInt(-2,2),
+            y: body.y + randInt(-2,2),
+            opacity: 0.1,
+            color: 'silver',
             radius: 10,
-            ttl: 100,
-            dx: speed.x + Math.random() * 2 - 1,
-            dy: speed.y + Math.random() * 2 - 1,
+            ttl: 50,
+            dx: speed.x + randInt(-1.5,1.5),
+            dy: speed.y + randInt(-1.5,1.5),
             update: function () {
                 if (this.opacity > 0.02) this.opacity -= 0.02
                 this.advance()

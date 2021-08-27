@@ -254,19 +254,19 @@ class Player extends RectBody {
 class Link extends RectBody {
     constructor(origin, dest) {
         super(origin.x, origin.y, 5, 5, origin.coords)
-        this.radius = 100;
+        this.radius = 10;
         this.color = 'white';
-        this.ttl = 100
+        this.ttl = 10
+
         let distance = distanceToTarget(origin, dest) / 10
-        let theta = angleToTarget(origin, dest)
-        this.dx = distance * Math.cos(theta)
-        this.dy = distance * Math.sin(theta)
-        // this.dx = distanceToTarget(origin, dest)/10 * Math.cos(angleToTarget(origin, dest)).x
+        let theta = Math.atan2(dest.y - origin.y, dest.x - origin. x)
+        this.dx = 2*distance * Math.cos(theta)
+        this.dy = 2*distance * Math.sin(theta)
     }
     render() {
         this.context.fillStyle = this.color;
         this.context.beginPath();
-        this.context.arc(0, 0, this.radius, 0, 2 * Math.PI);
+        this.context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
         this.context.fill();
     }
     update() {
@@ -279,7 +279,7 @@ class Link extends RectBody {
 
 let toggleShadow = str => str === 'player' ? 'shadow' : 'player'
 let switcheroo = () => {
-    let link = new Link(player, shadow)
+    let link = new Link(playerMap[activeSprite], playerMap[toggleShadow(activeSprite)])
     link.add()
     activeSprite = toggleShadow(activeSprite)
 }
@@ -447,7 +447,7 @@ class Wall extends RectBody {
         this.thickness = thickness
         this.destiny = destiny
         this.enableTravel = true
-        this.color = this.destiny ? 'red' : 'blue'
+        this.color = this.destiny ? 'transparent' : 'red'
         this.opacity = 0.7
         this.label = 'wall'
     }

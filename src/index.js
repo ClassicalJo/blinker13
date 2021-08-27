@@ -191,6 +191,7 @@ let enemy2 = new Enemy(701, 500, 40, world.currentCoords)
 let playerMap = { shadow, player }
 let activeSprite = 'player'
 
+
 let background = kontra.Sprite({
     width: world.width,
     height: world.height,
