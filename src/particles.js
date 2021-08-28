@@ -4,6 +4,12 @@ let pool = Pool({
     create: kontra.Sprite
 })
 
+function drawCircle(ctx, color, radius) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+    ctx.fill();
+}
 
 let explosion = (x, y) => {
     for (let i = 0; i < randInt(5, 20); i++) {
@@ -21,39 +27,105 @@ let explosion = (x, y) => {
                 this.advance()
             },
             render: function () {
-                this.context.fillStyle = this.color;
-                this.context.beginPath();
-                this.context.arc(0, 0, this.radius, 0, 2 * Math.PI);
-                this.context.fill();
+                drawCircle(this.context, this.color, this.radius)
             }
         })
     }
 
 }
 
+let fire = body => {
+    let speed = kontra.Vector(body.dx * -1, body.dy * -1).normalize()
+    pool.get({
+        x: body.x + speed.x * 15,
+        y: body.y + speed.y * 15,
+        color: ['red', 'yellow', 'red'],
+        radius: 5,
+        ttl: 3,
+        opacity: 0.25,
+        render() {
+            drawCircle(this.context, this.color[this.ttl], this.radius)
+        }
+    })
+
+}
 let smoke = body => {
-    if (body.dx == 0 && body.dy == 0) return
+    if (Math.abs(body.dx) < .2 && Math.abs(body.dy) < .2) return
     let speed = kontra.Vector(body.dx * -1, body.dy * -1).normalize()
     for (let i = 0; i < 3; i++) {
         pool.get({
-            x: body.x + randInt(-2,2),
-            y: body.y + randInt(-2,2),
+            x: body.x + speed.x * 10 + randInt(-2, 2),
+            y: body.y + speed.y * 10 + randInt(-2, 2),
             opacity: 0.1,
             color: 'silver',
             radius: 10,
             ttl: 50,
-            dx: speed.x + randInt(-1.5,1.5),
-            dy: speed.y + randInt(-1.5,1.5),
+            dx: speed.x + randInt(-1.5, 1.5),
+            dy: speed.y + randInt(-1.5, 1.5),
             update: function () {
                 if (this.opacity > 0.02) this.opacity -= 0.02
                 this.advance()
             },
             render: function () {
-                this.context.fillStyle = this.color;
-                this.context.beginPath();
-                this.context.arc(0, 0, this.radius, 0, 2 * Math.PI);
-                this.context.fill();
+                drawCircle(this.context, this.color, this.radius)
             }
         })
     }
+}
+
+let absorb = body => {
+    let radiusEffect = 100
+    let dest = kontra.Vector(body.x, body.y)
+    let rand = kontra.Vector(kontra.randInt(-300, 300), randInt(-300, 300)).normalize().scale(radiusEffect)
+    let pos = dest.add(rand)
+    let theta = Math.atan2(body.y - pos.y, body.x - pos.x)
+    let direction = kontra.Vector(Math.cos(theta), Math.sin(theta)).normalize()
+    let frames = 100
+    let speed = pos.distance(dest) / frames
+    pool.get({
+        x: pos.x,
+        y: pos.y,
+        opacity: 0.1,
+        color: 'silver',
+        radius: 5,
+        ttl: frames,
+        dx: speed * direction.x,
+        dy: speed * direction.y,
+        update: function () {
+            this.opacity += 0.01
+            this.advance()
+        },
+        render: function () {
+            drawCircle(this.context, this.color, this.radius)
+        }
+    })
+
+}
+
+let exhale = body => {
+    let radiusEffect = 100
+    let pos = kontra.Vector(body.x, body.y)
+    let dest = kontra.Vector(kontra.randInt(-3, 3), randInt(-3, 3))
+    let theta = Math.atan2(dest.y - pos.y, dest.x - pos.x)
+    let target = kontra.Vector(pos.x + radiusEffect * Math.cos(theta), pos.y + radiusEffect * Math.sin(theta))
+    let ttl = 100
+    let { x: dx, y: dy } = dest.normalize().scale(target.distance(pos) / ttl)
+    pool.get({
+        x: pos.x,
+        y: pos.y,
+        opacity: 1,
+        color: 'grey',
+        radius: 5,
+        ttl,
+        dx,
+        dy,
+        update: function () {
+            if (this.opacity > 0.1) this.opacity -= 0.01
+            this.advance()
+        },
+        render: function () {
+            drawCircle(this.context, this.color, this.radius)
+        }
+    })
+
 }

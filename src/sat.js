@@ -50,7 +50,3 @@ function SAT(body1, body2) {
     }
     return true
 }
-
-function handleCollisions(body1, body2){
-    console.log(body.label, body.label)
-}

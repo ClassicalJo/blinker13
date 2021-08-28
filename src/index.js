@@ -1,7 +1,6 @@
 initKeys()
-
-const WORLD_X = 3
-const WORLD_Y = 3
+const WORLD_X = 1
+const WORLD_Y = 1
 const WORLD_Z = 3
 const WORLD_WIDTH = document.querySelector('canvas').width
 const WORLD_HEIGHT = document.querySelector('canvas').height
@@ -84,12 +83,12 @@ class World extends kontra.Sprite.class {
             let quadrant1 = this.getQuadrant(new Coords(x1, y1, i))
             let quadrant2 = this.getQuadrant(new Coords(x2, y2, i))
             if (i !== 0) {
-                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant1.coords, "brown")
+                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant1.coords, "silver")
                 this.stairMap[i].up = stairs
                 quadrant1.add(stairs)
             }
             if (i !== this.depths.length - 1) {
-                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "black")
+                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "brown")
                 this.stairMap[i].down = stairs
                 quadrant2.add(stairs)
             }
@@ -176,6 +175,7 @@ const loop = kontra.GameLoop({
         pool.update()
     },
     render: () => {
+
         scene.render()
         pool.render()
     },
@@ -203,10 +203,11 @@ let spaceGas = (x, y, speed, color) => kontra.Sprite({
     width: world.width * 4,
     height: world.height,
     color: color,
-    opacity: .02,
+    opacity: 0.2,
     dx: speed,
     render: function () {
         this.context.beginPath();
+        // this.context.globalCompositeOperation = 'lighten'
         this.context.fillStyle = this.color
         this.context.moveTo(0, 0)
         let heightWave = this.height / 2
@@ -239,7 +240,8 @@ const scene = kontra.Scene({
         world],
 })
 
-
+let dia = new DiaBody(300, 300, 100, 300)
+dia.add()
 player.add()
 shadow.add()
 

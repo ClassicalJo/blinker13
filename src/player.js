@@ -18,6 +18,17 @@ function upDownSwitch(a, b, c) {
     else if (keyPressed('down')) return b
     else return c
 }
+
+function getTheta(origin, dest) {
+    return Math.atan2(dest.y - origin.y, dest.x - origin.x)
+}
+function rotateVertex(theta, vertex, origin) {
+    return {
+        x: (vertex.x - origin.x) * Math.cos(theta) - (vertex.y - origin.y) * Math.sin(theta) + origin.x,
+        y: (vertex.x - origin.x) * Math.sin(theta) + (vertex.y - origin.y) * Math.cos(theta) + origin.y
+    }
+
+}
 class Coords {
     constructor(x, y, z) {
         this.x = x
@@ -79,12 +90,7 @@ class RectBody extends kontra.Sprite.class {
         let leftDown = { x: x - w, y: y + h }
         let rightDown = { x: x + w, y: y + h }
         let vertices = [leftUp, leftDown, rightDown, rightUp]
-        return vertices.map(key => {
-            let theta = this.rotation
-            let newX = (key.x - x) * Math.cos(theta) - (key.y - y) * Math.sin(theta) + x
-            let newY = (key.x - x) * Math.sin(theta) + (key.y - y) * Math.cos(theta) + y
-            return { x: newX, y: newY }
-        })
+        return vertices.map(key => rotateVertex(this.rotation, key, this))
     }
 
     setPosition(x, y) {
@@ -101,7 +107,11 @@ class RectBody extends kontra.Sprite.class {
     }
     add() {
         world.add(this.coords, this)
-
+    }
+    travel(coords) {
+        world.getQuadrant(coords).remove(this)
+        this.coords = coords
+        world.getQuadrant(coords).add(this)
     }
     setInvulnerable(bool, time) {
         if (time) this.timeouts.push(setTimeout(() => this.invulnerable = bool, time))
@@ -137,7 +147,7 @@ class Combo1 extends Combo {
         let move = this.steps[this.currentStep].distance
         let swordOffset = { x: -body.width * 4, y: -body.height * 4 }
         if (noDirection()) {
-            let direction = getDirection(body)
+            let direction = getDirectionVector(body)
             if (body.dx !== 0 && body.dy !== 0) {
                 body.dx = direction.x * move
                 body.dy = direction.y * move
@@ -161,14 +171,12 @@ class Player extends RectBody {
         this.moveSpeed = 0.25
         this.speedLimit = 5
         this.baseSpeed = 2
-        this.anchor = { x: 0.5, y: 0.5 }
         this.attackCooldown = false
         this.combo = null
         this.released = true
         this.baseColor = color
         this.color = color
         this.name = name
-        this.canCollide = true
         this.label = 'player'
     }
     attack() {
@@ -178,11 +186,7 @@ class Player extends RectBody {
         this.combo.attack(this)
         this.combo.next()
     }
-    travel(coords) {
-        world.getQuadrant(coords).remove(this)
-        this.coords = coords
-        world.getQuadrant(coords).add(this)
-    }
+
     canAttack = () => keyPressed('shift') && !this.attackCooldown && this.released
     isActive = () => this.name === activeSprite
     reset() {
@@ -206,24 +210,24 @@ class Player extends RectBody {
     move() {
         let y = upDownSwitch(-1, 1, 0)
         let x = leftRightSwitch(-1, 1, 0)
-        if (y !== 0 || x !== 0) {
-            this.rotation = Math.atan2(y, x)
-        }
-        let shouldTurbo = (scalar, minSpeed) => Math.abs(scalar) < minSpeed
-        let shouldSlow = (scalar, maxSpeed) => Math.abs(scalar) > maxSpeed
+        if (y !== 0 || x !== 0) this.rotation = Math.atan2(y, x)
 
-        if (shouldTurbo(this.dx, this.baseSpeed)) this.dx = this.baseSpeed * x
-        if (shouldTurbo(this.dy, this.baseSpeed)) this.dy = this.baseSpeed * y
+        if (Math.abs(this.dx) < this.baseSpeed) this.dx = this.baseSpeed * x
+        if (Math.abs(this.dy) < this.baseSpeed) this.dy = this.baseSpeed * y
 
         this.ddx = this.moveSpeed * x
         this.ddy = this.moveSpeed * y
 
-        if (shouldSlow(this.dx, this.speedLimit)) this.dx *= 0.9
-        if (shouldSlow(this.dy, this.speedLimit)) this.dy *= 0.9
+        if (Math.abs(this.dx) > this.speedLimit) this.dx *= 0.9
+        if (Math.abs(this.dy) > this.speedLimit) this.dy *= 0.9
+
         if (!keyPressed('up') && !keyPressed('down')) this.dy *= 0.95
         if (!keyPressed('left') && !keyPressed('right')) this.dx *= 0.95
-        smoke(this)
-        this.isActive() && this.advance()
+        this.advance()
+        if (!noDirection()) {
+            fire(this)
+            smoke(this)
+        }
     }
     collide(body) {
         if (!this.canCollide || this.invulnerable) return
@@ -248,6 +252,27 @@ class Player extends RectBody {
         this.move()
         this.vertices = this.getVertices()
     }
+    draw() {
+        let shapes = [
+            [[0, -5], [0, -10, -10, -15, -30, -25], [25, -5]],
+            [[0, 30], [0, 35, -10, 40, -30, 50], [25, 30]],
+            [[30, 0], [40, 0, 40, 25, 30, 25], [30, 0]],
+        ]
+        this.context.beginPath()
+        this.context.rect(0, 0, this.width, this.height)
+        this.context.fillStyle = this.color
+        this.context.fill()
+
+        this.context.beginPath()
+        this.context.globalCompositeOperation = 'lighten'
+        this.context.fillStyle = `rgba(255,255,255,1)`
+        for (let i = 0; i < shapes.length; i++) {
+            this.context.moveTo(...shapes[i][0])
+            this.context.bezierCurveTo(...shapes[i][1])
+            this.context.lineTo(...shapes[i][2])
+        }
+        this.context.fill()
+    }
 }
 
 
@@ -259,9 +284,9 @@ class Link extends RectBody {
         this.ttl = 10
 
         let distance = distanceToTarget(origin, dest) / 10
-        let theta = Math.atan2(dest.y - origin.y, dest.x - origin. x)
-        this.dx = 2*distance * Math.cos(theta)
-        this.dy = 2*distance * Math.sin(theta)
+        let theta = getTheta(origin, dest)
+        this.dx = 2 * distance * Math.cos(theta)
+        this.dy = 2 * distance * Math.sin(theta)
     }
     render() {
         this.context.fillStyle = this.color;
@@ -496,71 +521,117 @@ class Depth {
 
 class Stairs extends RectBody {
     constructor(x, y, coords, color) {
-        super(x, y, 25, 25, coords);
+        super(x, y, 55, 55, coords);
         this.color = color
         this.label = 'stairs'
-
+        this.shouldAbsorb = 0
+        this.anchor = { x: 0, y: 0 }
+        this.enlarge = true
     }
     addDestiny(coords) {
         this.destiny = coords
     }
     collide(body) {
+        if (body instanceof Player) this.colliding = true
         if (body instanceof Player && this.destiny !== undefined && keyPressed('space')) {
             world.travel(this.destiny.coords)
             player
-                .setPosition(this.destiny.x, this.destiny.y + 50)
+                .setPosition(this.destiny.x, this.destiny.y + 100)
                 .tempInvulnerable()
                 .travel(this.destiny.coords)
             shadow
-                .setPosition(this.destiny.x, this.destiny.y + 50)
+                .setPosition(this.destiny.x, this.destiny.y + 100)
                 .tempInvulnerable()
                 .travel(this.destiny.coords)
-
         }
-
     }
+    update() {
+        this.shouldAbsorb++
+        this.scaleX += this.enlarge ? .001 : -.001
+        this.scaleY += this.enlarge ? .001 : -.001
+        if (this.scaleX > 1.15) this.enlarge = false
+        if (this.scaleX < 1) this.enlarge = true
+
+        if (this.colliding) {
+            this.rotation += degToRad(2)
+            this.colliding = false
+        }
+        else this.rotation += degToRad(1)
+        if (this.shouldAbsorb > 10) {
+            this.shouldAbsorb = 0
+            this.color === 'silver' ? exhale(this) : absorb(this)
+        }
+    }
+
+    draw() {
+        let height = 50
+        let width = 10
+        let arc = width - 30
+        let shape = [
+            [[-width, 0], [-width, -height], [0, -height]],
+            [[-arc, -height], [-arc, 0], [0, 0]]
+        ]
+        let final = []
+        for (let i = 0; i < 360; i += 30) {
+            let theta = degToRad(i)
+            final.push(shape.map(key => {
+                let result = []
+                for (let i = 0; i < key.length; i++) {
+                    result.push([key[i][0] * Math.cos(theta) - key[i][1] * Math.sin(theta), key[i][0] * Math.sin(theta) + key[i][1] * Math.cos(theta)])
+                }
+                return result
+            }))
+        }
+        this.context.beginPath()
+        final.forEach(key => key.forEach(key2 => this.context.bezierCurveTo(...key2.flat())))
+        this.context.fillStyle = this.color
+        this.context.fill()
+    }
+
 }
 
 
-// class DiaBody extends RectBody {
-//     constructor(x, y, width, height) {
-//         super(x, y, width, height)
-//         this.color = 'yellow'
-//         this.vertices = this.getVertices()
-//     }
-//     getVertices() {
-//         let w = this.width / 2
-//         let h = this.height / 2
-//         let { x, y } = this
-//         let up = { x, y: y - h }
-//         let left = { x: x - w, y }
-//         let down = { x, y: y + h }
-//         let right = { x: x + w, y }
-//         let vertices = [left, down, right, up]
-//         // return vertices
-//         return vertices.map(key => {
-//             let theta = this.rotation
-//             let newX = (key.x - x) * Math.cos(theta) - (key.y - y) * Math.sin(theta) + x
-//             let newY = (key.x - x) * Math.sin(theta) + (key.y - y) * Math.cos(theta) + y
-//             return { x: newX, y: newY}
-//         })
+class DiaBody extends RectBody {
+    constructor(x, y, width, height) {
+        super(x, y, width, height)
+        this.color = 'yellow'
+        this.vertices = this.getVertices()
+    }
+    getVertices() {
+        let w = this.width / 2
+        let h = this.height / 2
+        let { x, y } = this
+        let up = { x, y: y - h }
+        let left = { x: x - w, y }
+        let down = { x, y: y + h }
+        let right = { x: x + w, y }
+        let vertices = [up, left, down, right,]
+        // return vertices
+        return vertices.map(key => {
+            let theta = this.rotation
+            let newX = (key.x - x) * Math.cos(theta) - (key.y - y) * Math.sin(theta) + x
+            let newY = (key.x - x) * Math.sin(theta) + (key.y - y) * Math.cos(theta) + y
+            return { x: newX, y: newY }
+        })
 
-//     }
-//     update() {
-//         // this.rotation += degToRad(1)
-//     }
-//     draw() {
-//         this.context.beginPath()
-//         this.context.fillStyle = this.color
-//         this.context.moveTo(this.vertices[0].x - this.width, this.vertices[0].y - this.height)
-//         for (let i = 1; i < this.vertices.length; i++) {
-//             this.context.lineTo(this.vertices[i].x - this.width, this.vertices[i].y - this.height)
-//         }
-//         this.context.lineTo(this.vertices[0].x - this.width, this.vertices[0].y - this.height)
-//         this.context.fill()
-//     }
-//     collide(body) {
-//         console.log('colliding')
-//     }
-// }
+    }
+    update() {
+        // this.rotation += degToRad(1)
+        this.vertices = this.getVertices()
+    }
+    draw() {
+        this.context.beginPath()
+        this.context.fillStyle = this.color
+        this.context.lineTo(0, this.height / 2)
+        this.context.lineTo(this.width / 2, 0)
+        this.context.lineTo(this.width, this.height / 2)
+        this.context.lineTo(this.width / 2, this.height)
+
+        this.context.fill()
+    }
+    collide(body) {
+        if (body instanceof Player)
+            console.log('colliding')
+    }
+}
 
