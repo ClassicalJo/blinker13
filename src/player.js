@@ -44,19 +44,27 @@ class Combo {
         this.timeouts = []
         this.intervals = []
         this.body = body
+        this.cooldown = false
         this.finished = false
+
     }
     attack() {
-        if (this.finished) return this.first()
+        if (this.cooldown || this.finished) return
         if (this.timer === 0) {
             this.start()
             this.first()
         }
-        else if (this.timer > 150 && this.timer < 400) {
+        else if (this.timer > 150) {
             this.lance()
-            this.end()
+            let cooldown = 1000
+            this.cooldown = true
+            this.timeouts.push(setTimeout(() => {
+                this.cooldown = false
+                this.end()
+            }, cooldown))
+
         }
-        else this.first()
+
     }
     first() {
         let move = 20;
@@ -72,7 +80,7 @@ class Combo {
         sword.add()
     }
     lance() {
-        let totalDistance = 3000
+        let totalDistance = 300
         let frames = 10
         let move = totalDistance / frames
         if (noDirection()) {
@@ -85,10 +93,11 @@ class Combo {
         let shield = new Shield(this.body, this.body.width * 10, this.body.height * 1.5, frames)
         shield.add()
 
+
     }
     start() {
         this.intervals.push(setInterval(() => this.timer += 100, 100))
-        this.timeouts.push(setTimeout(() => this.shouldCancel = true, this.countdown))
+        this.timeouts.push(setTimeout(() => this.finished = true, this.countdown))
     }
     end() {
         this.intervals.forEach(key => clearInterval(key))
@@ -141,7 +150,7 @@ class RectBody extends kontra.Sprite.class {
         return this
     }
 
-    
+
     setCollision(bool, time) {
         if (time) this.timeouts.push(setTimeout(() => this.canCollide = bool, time))
         else this.canCollide = bool
@@ -161,9 +170,9 @@ class RectBody extends kontra.Sprite.class {
         if (time) this.timeouts.push(setTimeout(() => this.invulnerable = bool, time))
         else this.invulnerable = bool
     }
-    tempInvulnerable() {
+    tempInvulnerable(time) {
         this.invulnerable = true
-        this.timeouts.push(setTimeout(() => this.invulnerable = false, 1000))
+        this.timeouts.push(setTimeout(() => this.invulnerable = false, time))
         return this
     }
     remove() {
@@ -224,9 +233,11 @@ class Player extends RectBody {
         this.label = 'player'
     }
     attack() {
-        this.color = 'red'
+        if(this.combo.cooldown) return
         this.released = false
+        this.tempInvulnerable(150)
         this.combo.attack(this)
+        if (this.combo.finished) this.combo = null
     }
 
     canAttack = () => keyPressed('shift') && !this.attackCooldown && this.released
@@ -272,13 +283,14 @@ class Player extends RectBody {
     collide(body) {
         if (!this.canCollide || this.invulnerable) return
         if (body instanceof Enemy) {
-            this.setInvulnerable(true)
+            this.tempInvulnerable(1000)
             let inverse = kontra.Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
-            this.setInvulnerable(false, 1000)
+            
         }
     }
+    
     update() {
         if (!this.isActive()) return
         if (this.shouldCancel()) this.cancel()
@@ -410,13 +422,13 @@ class Enemy extends RectBody {
             this.hp <= 0 && this.die()
         }
     }
-    
+
     move() {
         this.rotation += degToRad(1)
         let theta = getTheta(this, player)
 
-        
-        this.setVelocity(Math.cos(theta)*2,Math.sin(theta)*2)
+
+        this.setVelocity(Math.cos(theta) * 2, Math.sin(theta) * 2)
         this.advance()
     }
     update() {
@@ -584,11 +596,11 @@ class Stairs extends RectBody {
             world.travel(this.destiny.coords)
             player
                 .setPosition(this.destiny.x, this.destiny.y + 100)
-                .tempInvulnerable()
+                .tempInvulnerable(1000)
                 .travel(this.destiny.coords)
             shadow
                 .setPosition(this.destiny.x, this.destiny.y + 100)
-                .tempInvulnerable()
+                .tempInvulnerable(1000)
                 .travel(this.destiny.coords)
         }
     }
@@ -645,13 +657,7 @@ class DiaBody extends RectBody {
         this.vertices = this.getVertices()
     }
     draw() {
-        this.context.beginPath()
-        this.context.fillStyle = this.color
-        this.context.lineTo(0, this.height / 2)
-        this.context.lineTo(this.width / 2, 0)
-        this.context.lineTo(this.width, this.height / 2)
-        this.context.lineTo(this.width / 2, this.height)
-        this.context.fill()
+        drawDia(this.context, this.color, this.width, this.height)
     }
 }
 

@@ -23,6 +23,18 @@ function drawRect(ctx, color, width, height) {
     ctx.fill()
 }
 
+function drawDia(ctx, color, width, height) {
+    ctx.beginPath()
+    ctx.fillStyle = color
+    let lines = [
+        [0, height / 2],
+        [width / 2, 0],
+        [width, height / 2],
+        [width / 2, height]
+    ]
+    lines.forEach(key => ctx.lineTo(...key))
+    ctx.fill()
+}
 function drawPortal(ctx, color) {
     let height = 50
     let width = 30
@@ -75,3 +87,4 @@ function drawRamiel(ctx, color) {
 
     drawBeziers(ctx, color, shapes)
 }
+
