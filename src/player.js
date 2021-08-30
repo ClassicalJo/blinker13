@@ -38,31 +38,64 @@ class Coords {
 }
 
 class Combo {
-    constructor(steps, cooldown, timer) {
-        this.steps = steps
-        this.cooldown = cooldown
-        this.timer = timer
-        this.currentStep = 0
-        this.timeout = null
-        this.onCooldown = false
-        this.canceled = false
-        this.start()
+    constructor(body) {
+        this.timer = 0
+        this.countdown = 4000
+        this.timeouts = []
+        this.intervals = []
+        this.body = body
+        this.finished = false
     }
-    shouldReset() {
-        return this.currentStep === 0
+    attack() {
+        if (this.finished) return this.first()
+        if (this.timer === 0) {
+            this.start()
+            this.first()
+        }
+        else if (this.timer > 150 && this.timer < 400) {
+            this.lance()
+            this.end()
+        }
+        else this.first()
     }
-    next() {
-        this.currentStep++
-        clearTimeout(this.timeout)
-        this.start()
-        if (this.currentStep === this.steps.length) this.currentStep = 0
+    first() {
+        let move = 20;
+        let swordOffset = { x: -this.body.width * 4, y: -this.body.height * 4 }
+        if (noDirection()) {
+            let direction = getDirectionVector(this.body).scale(move)
+            if (this.body.dx !== 0 && this.body.dy !== 0) this.body.setVelocity(direction.x, direction.y)
+        }
+        else {
+            this.body.setVelocity(leftRightSwitch(-move, move, 0), upDownSwitch(-move, move, 0))
+        }
+        let sword = new Sword(swordOffset, this.body)
+        sword.add()
+    }
+    lance() {
+        let totalDistance = 3000
+        let frames = 10
+        let move = totalDistance / frames
+        if (noDirection()) {
+            let direction = getDirectionVector(this.body)
+            if (this.body.dx !== 0 && this.body.dy !== 0) this.body.setVelocity(direction.x * move, direction.y * move)
+        }
+        else {
+            this.body.setVelocity(leftRightSwitch(-move, move, 0), upDownSwitch(-move, move, 0))
+        }
+        let shield = new Shield(this.body, this.body.width * 10, this.body.height * 1.5, frames)
+        shield.add()
+
     }
     start() {
-        this.timeout = setTimeout(() => this.cancel(), this.timer)
+        this.intervals.push(setInterval(() => this.timer += 100, 100))
+        this.timeouts.push(setTimeout(() => this.shouldCancel = true, this.countdown))
     }
-    cancel() {
-        this.canceled = true
+    end() {
+        this.intervals.forEach(key => clearInterval(key))
+        this.timeouts.forEach(key => clearTimeout(key))
+        this.finished = true
     }
+
 
 }
 
@@ -72,11 +105,14 @@ class RectBody extends kontra.Sprite.class {
         this.anchor = { x: 0.5, y: 0.5 };
         this.canCollide = true;
         this.timeouts = [];
+        this.intervals = []
         this.vertices = this.getVertices()
         this.coords = coords
         this.invulnerable = false
         this.label = 'RectBody'
+
     }
+
     updateVertices() {
         this.vertices = this.getVertices()
     }
@@ -98,6 +134,14 @@ class RectBody extends kontra.Sprite.class {
         this.y = y
         return this
     }
+
+    setVelocity(x, y) {
+        this.dx = x
+        this.dy = y
+        return this
+    }
+
+    
     setCollision(bool, time) {
         if (time) this.timeouts.push(setTimeout(() => this.canCollide = bool, time))
         else this.canCollide = bool
@@ -123,8 +167,9 @@ class RectBody extends kontra.Sprite.class {
         return this
     }
     remove() {
-        this.ttl = 0
         this.timeouts.forEach(key => clearTimeout(key))
+        this.intervals.forEach(key => clearInterval(key))
+        this.ttl = 0
     }
 }
 
@@ -134,35 +179,35 @@ class Step {
             this.timeout = stepTimeout
     }
 }
-class Combo1 extends Combo {
-    constructor() {
-        let step1 = new Step(20, 500)
-        let step2 = new Step(5, 1000)
-        let step3 = new Step(25, 1000)
-        super([step1, step2, step3], 500, 4000);
-        this.attackDistance = 50
+// class Combo1 extends Combo {
+//     constructor() {
+//         let step1 = new Step(20, 500)
+//         let step2 = new Step(5, 1000)
+//         let step3 = new Step(25, 1000)
+//         super([step1, step2, step3], 500, 4000);
+//         this.attackDistance = 50
 
-    }
-    attack(body) {
-        let move = this.steps[this.currentStep].distance
-        let swordOffset = { x: -body.width * 4, y: -body.height * 4 }
-        if (noDirection()) {
-            let direction = getDirectionVector(body)
-            if (body.dx !== 0 && body.dy !== 0) {
-                body.dx = direction.x * move
-                body.dy = direction.y * move
-            }
-            let sword = new Sword(swordOffset, body)
-            sword.add()
-        }
-        else {
-            body.dx = leftRightSwitch(-move, move, 0)
-            body.dy = upDownSwitch(-move, move, 0)
-            let sword = new Sword(swordOffset, body)
-            sword.add(body.coords)
-        }
-    }
-}
+//     }
+//     attack(body) {
+//         let move = this.steps[this.currentStep].distance
+//         let swordOffset = { x: -body.width * 4, y: -body.height * 4 }
+//         if (noDirection()) {
+//             let direction = getDirectionVector(body)
+//             if (body.dx !== 0 && body.dy !== 0) {
+//                 body.dx = direction.x * move
+//                 body.dy = direction.y * move
+//             }
+//             let sword = new Sword(swordOffset, body)
+//             sword.add()
+//         }
+//         else {
+//             body.dx = leftRightSwitch(-move, move, 0)
+//             body.dy = upDownSwitch(-move, move, 0)
+//             let sword = new Sword(swordOffset, body)
+//             sword.add(body.coords)
+//         }
+//     }
+// }
 
 
 class Player extends RectBody {
@@ -171,7 +216,6 @@ class Player extends RectBody {
         this.moveSpeed = 0.25
         this.speedLimit = 5
         this.baseSpeed = 2
-        this.attackCooldown = false
         this.combo = null
         this.released = true
         this.baseColor = color
@@ -182,20 +226,12 @@ class Player extends RectBody {
     attack() {
         this.color = 'red'
         this.released = false
-        this.attackCooldown = true
         this.combo.attack(this)
-        this.combo.next()
     }
 
     canAttack = () => keyPressed('shift') && !this.attackCooldown && this.released
     isActive = () => this.name === activeSprite
-    reset() {
-        this.combo = null
-        setTimeout(() => {
-            this.attackCooldown = false
-            this.color = this.baseColor
-        }, 2000)
-    }
+
     shouldCancel = () => this.combo !== null && this.combo.canceled
     cancel() {
         this.combo = null
@@ -208,6 +244,10 @@ class Player extends RectBody {
         }, cooldown)
     }
     move() {
+        if (this.x < 0) this.x = this.width
+        if (this.x > WORLD_WIDTH) this.x = WORLD_WIDTH - this.width
+        if (this.y < 0) this.y = this.height
+        if (this.y > WORLD_HEIGHT) this.y = WORLD_HEIGHT - this.height
         let y = upDownSwitch(-1, 1, 0)
         let x = leftRightSwitch(-1, 1, 0)
         if (y !== 0 || x !== 0) this.rotation = Math.atan2(y, x)
@@ -243,10 +283,10 @@ class Player extends RectBody {
         if (!this.isActive()) return
         if (this.shouldCancel()) this.cancel()
         if (this.canAttack()) {
-            if (!this.combo) this.combo = new Combo1()
+            if (!this.combo) this.combo = new Combo(this)
             this.attack()
-            if (this.combo.shouldReset()) this.reset()
-            else this.setReady(this.combo.cooldown)
+            // if (this.combo.shouldReset()) this.reset()
+            // else this.setReady(this.combo.cooldown)
         }
         else if (!keyPressed('shift')) this.released = true
         this.move()
@@ -254,24 +294,16 @@ class Player extends RectBody {
     }
     draw() {
         let shapes = [
-            [[0, -5], [0, -10, -10, -15, -30, -25], [25, -5]],
-            [[0, 30], [0, 35, -10, 40, -30, 50], [25, 30]],
-            [[30, 0], [40, 0, 40, 25, 30, 25], [30, 0]],
+            [
+                [0, -5], [[0, -10, -10, -15, -30, -25]], [25, -5]
+            ],
+            [[0, 30], [[0, 35, -10, 40, -30, 50]], [25, 30]],
+            [[30, 0], [[40, 0, 40, 25, 30, 25]], [30, 0]],
         ]
-        this.context.beginPath()
-        this.context.rect(0, 0, this.width, this.height)
-        this.context.fillStyle = this.color
-        this.context.fill()
-
-        this.context.beginPath()
+        drawRect(this.context, this.invulnerable ? WORLD_LIFETIME % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
         this.context.globalCompositeOperation = 'lighten'
-        this.context.fillStyle = `rgba(255,255,255,1)`
-        for (let i = 0; i < shapes.length; i++) {
-            this.context.moveTo(...shapes[i][0])
-            this.context.bezierCurveTo(...shapes[i][1])
-            this.context.lineTo(...shapes[i][2])
-        }
-        this.context.fill()
+        drawBeziers(this.context, `rgba(255,255,255,1)`, shapes)
+
     }
 }
 
@@ -288,11 +320,8 @@ class Link extends RectBody {
         this.dx = 2 * distance * Math.cos(theta)
         this.dy = 2 * distance * Math.sin(theta)
     }
-    render() {
-        this.context.fillStyle = this.color;
-        this.context.beginPath();
-        this.context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
-        this.context.fill();
+    draw() {
+        drawCircle(this.context, this.color, this.radius)
     }
     update() {
         this.ttl -= 1
@@ -357,8 +386,12 @@ class Enemy extends RectBody {
         super(x, y, 50, 50, coords);
         this.maxHp = maxHp
         this.hp = maxHp
+        this.speed = 1
         this.color = 'lavender'
         this.label = 'enemy'
+    }
+    draw() {
+        drawRamiel(this.context, this.color, this)
     }
     die() {
         explosion(this.x, this.y)
@@ -376,6 +409,19 @@ class Enemy extends RectBody {
             this.setCollision(true, 1000)
             this.hp <= 0 && this.die()
         }
+    }
+    
+    move() {
+        this.rotation += degToRad(1)
+        let theta = getTheta(this, player)
+
+        
+        this.setVelocity(Math.cos(theta)*2,Math.sin(theta)*2)
+        this.advance()
+    }
+    update() {
+        this.move()
+        this.vertices = this.getVertices()
     }
 }
 
@@ -527,6 +573,7 @@ class Stairs extends RectBody {
         this.shouldAbsorb = 0
         this.anchor = { x: 0, y: 0 }
         this.enlarge = true
+        this.scale = Math.random() * 1.1
     }
     addDestiny(coords) {
         this.destiny = coords
@@ -549,7 +596,7 @@ class Stairs extends RectBody {
         this.shouldAbsorb++
         this.scaleX += this.enlarge ? .001 : -.001
         this.scaleY += this.enlarge ? .001 : -.001
-        if (this.scaleX > 1.15) this.enlarge = false
+        if (this.scaleX > 1.2) this.enlarge = false
         if (this.scaleX < 1) this.enlarge = true
 
         if (this.colliding) {
@@ -564,28 +611,7 @@ class Stairs extends RectBody {
     }
 
     draw() {
-        let height = 50
-        let width = 10
-        let arc = width - 30
-        let shape = [
-            [[-width, 0], [-width, -height], [0, -height]],
-            [[-arc, -height], [-arc, 0], [0, 0]]
-        ]
-        let final = []
-        for (let i = 0; i < 360; i += 30) {
-            let theta = degToRad(i)
-            final.push(shape.map(key => {
-                let result = []
-                for (let i = 0; i < key.length; i++) {
-                    result.push([key[i][0] * Math.cos(theta) - key[i][1] * Math.sin(theta), key[i][0] * Math.sin(theta) + key[i][1] * Math.cos(theta)])
-                }
-                return result
-            }))
-        }
-        this.context.beginPath()
-        final.forEach(key => key.forEach(key2 => this.context.bezierCurveTo(...key2.flat())))
-        this.context.fillStyle = this.color
-        this.context.fill()
+        drawPortal(this.context, this.color)
     }
 
 }
@@ -606,7 +632,6 @@ class DiaBody extends RectBody {
         let down = { x, y: y + h }
         let right = { x: x + w, y }
         let vertices = [up, left, down, right,]
-        // return vertices
         return vertices.map(key => {
             let theta = this.rotation
             let newX = (key.x - x) * Math.cos(theta) - (key.y - y) * Math.sin(theta) + x
@@ -626,12 +651,28 @@ class DiaBody extends RectBody {
         this.context.lineTo(this.width / 2, 0)
         this.context.lineTo(this.width, this.height / 2)
         this.context.lineTo(this.width / 2, this.height)
-
         this.context.fill()
-    }
-    collide(body) {
-        if (body instanceof Player)
-            console.log('colliding')
     }
 }
 
+
+class Shield extends DiaBody {
+    constructor(body, width, height, ttl) {
+        super(body.x, body.y, width, height);
+        this.color = 'green'
+        this.body = body
+        this.opacity = 0.3
+        this.ttl = ttl
+    }
+    update() {
+        this.setPosition(this.body.x, this.body.y)
+        this.rotation = this.body.rotation
+        this.ttl -= 1
+        this.vertices = this.getVertices()
+    }
+    collide(body) {
+        if (body instanceof Enemy) {
+            console.log('enemy hit')
+        }
+    }
+}

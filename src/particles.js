@@ -4,12 +4,7 @@ let pool = Pool({
     create: kontra.Sprite
 })
 
-function drawCircle(ctx, color, radius) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, 2 * Math.PI);
-    ctx.fill();
-}
+
 
 let explosion = (x, y) => {
     for (let i = 0; i < randInt(5, 20); i++) {

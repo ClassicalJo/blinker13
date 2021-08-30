@@ -4,6 +4,8 @@ const WORLD_Y = 1
 const WORLD_Z = 3
 const WORLD_WIDTH = document.querySelector('canvas').width
 const WORLD_HEIGHT = document.querySelector('canvas').height
+let WORLD_LIFETIME = 0
+const PAUSE = true
 keyMap['ControlLeft'] = 'ctrl'
 keyMap['ShiftLeft'] = 'shift'
 
@@ -148,6 +150,7 @@ class World extends kontra.Sprite.class {
         })
     }
     update() {
+        WORLD_LIFETIME++
         let bodies = this.currentQuadrant.bodies
         for (let i = bodies.length - 1; i >= 0; i--) {
             for (let j = i - 1; j >= 0; j--) {
@@ -171,13 +174,16 @@ class World extends kontra.Sprite.class {
 let world = new World(3, 3, 3)
 const loop = kontra.GameLoop({
     update: () => {
-        scene.update()
+        background.update()
+        PAUSE && scene.update()
         pool.update()
+
     },
     render: () => {
-
-        scene.render()
+        background.render()
         pool.render()
+        PAUSE && scene.render()
+
     },
 })
 
@@ -192,7 +198,7 @@ let playerMap = { shadow, player }
 let activeSprite = 'player'
 
 
-let background = kontra.Sprite({
+let blackScreen = kontra.Sprite({
     width: world.width,
     height: world.height,
     color: 'black',
@@ -228,16 +234,21 @@ let spaceGas = (x, y, speed, color) => kontra.Sprite({
     }
 
 })
-const scene = kontra.Scene({
-    id: 'world',
-    // children: [background, spaceGas(0, -400, -10, 'red'), world],
+
+const background = kontra.Scene({
+    id: 'background',
     children: [
-        background,
+        blackScreen,
         spaceGas(-1300, -500, -1, 'darkred'),
         spaceGas(-200, 500, -2.5, 'darkblue'),
         spaceGas(-1000, 800, -2, 'gray'),
         spaceGas(0, 0, -.5, 'purple'),
-        world],
+    ]
+})
+const scene = kontra.Scene({
+    id: 'world',
+    // children: [background, spaceGas(0, -400, -10, 'red'), world],
+    children: [world],
 })
 
 let dia = new DiaBody(300, 300, 100, 300)
