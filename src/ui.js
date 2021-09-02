@@ -9,15 +9,6 @@ let UI = {
         isPaused = true
     },
     start: function () {
-        this.loading = {
-            lightScreen: {
-                show:true,
-                sprite: kontra.Sprite({
-                    width: WORLD_WIDTH,
-                    height: WORLD_HEIGHT,
-                })
-            }
-        }
         this.elements = {
             blackScreen: {
                 show: true,
