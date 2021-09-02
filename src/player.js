@@ -255,6 +255,7 @@ class Player extends RectBody {
             let inverse = kontra.Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
+            switcheroo()
 
         }
     }
@@ -278,14 +279,11 @@ class Player extends RectBody {
     }
     draw() {
         let shapes = [
-            [
-                [0, -5], [[0, -10, -10, -15, -30, -25]], [25, -5]
-            ],
+            [[0, -5], [[0, -10, -10, -15, -30, -25]], [25, -5]],
             [[0, 30], [[0, 35, -10, 40, -30, 50]], [25, 30]],
             [[30, 0], [[40, 0, 40, 25, 30, 25]], [30, 0]],
         ]
         drawRect(this.context, this.invulnerable ? worldLifetime % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
-        this.context.globalCompositeOperation = 'lighten'
         drawBeziers(this.context, `rgba(255,255,255,1)`, shapes)
 
     }
@@ -296,24 +294,23 @@ class Link extends RectBody {
     constructor(origin, dest) {
         super(origin.x, origin.y, 5, 5, origin.coords)
         this.radius = 10;
+        this.origin = origin
+        this.destiny = dest
         this.color = 'white';
         this.ttl = 10
-
-        let distance = distanceToTarget(origin, dest) / 10
-        let theta = getTheta(origin, dest)
-        this.dx = 2 * distance * Math.cos(theta)
-        this.dy = 2 * distance * Math.sin(theta)
     }
     draw() {
         drawCircle(this.context, this.color, this.radius)
     }
     update() {
-        this.ttl -= 1
+        let speed = distanceToTarget(this, this.destiny) / this.ttl
+        let theta = getTheta(this, this.destiny)
+        this.setVelocity(speed * Math.cos(theta), speed * Math.sin(theta))
+        this.ttl -= 1 
         this.advance()
     }
 
 }
-
 
 let toggleShadow = str => str === 'player' ? 'shadow' : 'player'
 let switcheroo = () => {
@@ -321,10 +318,7 @@ let switcheroo = () => {
     link.add()
     activeSprite = toggleShadow(activeSprite)
 }
-
-
 let switcherooOnCooldown = false
-
 
 class Sword extends RectBody {
     constructor(offset, body) {
@@ -386,9 +380,6 @@ class Enemy extends RectBody {
             this.hp -= damage
             this.setCollision(true, 1000)
             this.hp <= 0 && this.die()
-        }
-        if (body instanceof Player) {
-            //another thing
         }
         if (body instanceof Sword) {
             this.setCollision(false)
