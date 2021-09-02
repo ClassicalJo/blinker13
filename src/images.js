@@ -67,19 +67,19 @@ function shapePetals(basicShape, theta) {
     return shapes
 }
 
-function drawRamiel(ctx, color) {
+function drawRamiel(ctx, color, w, h) {
     let shapes = [
         [
             [0, 0],
             [
-                [25, 0, 25, -50, 25, -50],
-                [25, 0, 50, 0, 50, 0],
-                [50, 25, 100, 25, 100, 25],
-                [50, 25, 50, 50, 50, 50],
-                [25, 50, 25, 100, 25, 100],
-                [25, 50, 0, 50, 0, 50],
-                [0, 25, -50, 25, -50, 25],
-                [0, 25, 0, 0, 0, 0],
+                [w/2, 0, w/2, -h, w/2, -h],
+                [w/2, 0, w, 0, w, 0],
+                [w, h/2, w*2, h/2, w*2, h/2],
+                [w, h/2, w, h, w, h],
+                [w/2, h, w/2, h*2, w/2, h*2],
+                [w/2, h, 0, h, 0, h],
+                [0, h/2, -w, h/2, -w, h/2],
+                [0, h/2, 0, 0, 0, 0],
             ],
             [0, 0]
         ]
@@ -88,3 +88,38 @@ function drawRamiel(ctx, color) {
     drawBeziers(ctx, color, shapes)
 }
 
+let screen = color => kontra.Sprite({
+    width: world.width,
+    height: world.height,
+    color: color,
+})
+
+let spaceGas = (x, y, speed, color) => kontra.Sprite({
+    x,
+    y,
+    width: WORLD_WIDTH * 4,
+    height: WORLD_HEIGHT,
+    color: color,
+    opacity: 0.2,
+    dx: speed,
+    render: function () {
+        let h = this.height / 2
+        let w = this.width / 8
+        let shape = [[[0, 0],
+        [
+            [w, -h, w, -h, w * 2, 0],
+            [w * 3, h, w * 3, h, w * 4, 0],
+            [w * 5, -h, w * 5, -h, w * 6, 0],
+            [w * 6, this.height, w * 6, this.height, w * 6, this.height],
+            [w * 5, this.height + h, w * 5, this.height + h, w * 4, this.height],
+            [w * 3, this.height - h, w * 3, this.height - h, w * 2, this.height],
+            [w, this.height + h, w, this.height + h, 0, this.height]
+        ],
+        [0, 0]]]
+        drawBeziers(this.context, this.color, shape)
+    },
+    update: function () {
+        this.advance()
+        if (this.x < - this.width / 2) this.x = 0
+    }
+})

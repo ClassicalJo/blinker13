@@ -186,6 +186,7 @@ class Player extends RectBody {
         this.color = color
         this.name = name
         this.label = 'player'
+        this.add(world.currentCoords)
     }
     attack() {
         if (!this.combo || this.combo.finished) return
@@ -243,9 +244,9 @@ class Player extends RectBody {
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
             switcheroo()
-
         }
     }
+
     travel(coords) {
         playerMap[toggleShadow(activeSprite)].setVelocity(0, 0)
         world.getQuadrant(coords).remove(this)
@@ -300,9 +301,11 @@ class Link extends RectBody {
 
 let toggleShadow = str => str === 'player' ? 'shadow' : 'player'
 let switcheroo = () => {
+
     let link = new Link(playerMap[activeSprite], playerMap[toggleShadow(activeSprite)])
     link.add()
     activeSprite = toggleShadow(activeSprite)
+    playerMap[activeSprite].tempInvulnerable(300)
 }
 let switcherooOnCooldown = false
 
@@ -343,36 +346,28 @@ class Sword extends RectBody {
 }
 
 class Enemy extends RectBody {
-    constructor(x, y, maxHp, coords) {
+    constructor(x, y, maxHp, coords, speed = 2) {
         super(x, y, 50, 50, coords);
         this.maxHp = maxHp
         this.hp = maxHp
         this.speed = 1
         this.color = 'lavender'
         this.label = 'enemy'
+        this.speed = speed
     }
     draw() {
-        drawRamiel(this.context, this.color, this)
+        drawRamiel(this.context, this.invulnerable ? worldLifetime % 2 == 0 ? this.color : 'transparent' : this.color, this.width, this.height)
     }
     die() {
-        explosion(this.x, this.y)
+        explosion(this)
         this.remove()
     }
     collide(body) {
-        if (body instanceof Shield) {
-            this.setCollision(false)
+        if (!this.invulnerable && (body instanceof Sword || body instanceof Shield)) {
+            this.tempInvulnerable(1000)
             let damage = body.damage()
             new Damage(this, damage)
             this.hp -= damage
-            this.setCollision(true, 1000)
-            this.hp <= 0 && this.die()
-        }
-        if (body instanceof Sword) {
-            this.setCollision(false)
-            let damage = body.damage()
-            new Damage(this, damage)
-            this.hp -= damage
-            this.setCollision(true, 1000)
             this.hp <= 0 && this.die()
         }
     }
@@ -380,8 +375,7 @@ class Enemy extends RectBody {
     move() {
         this.rotation += degToRad(1)
         let theta = getTheta(this, playerMap[activeSprite])
-
-        this.setVelocity(Math.cos(theta) * 2, Math.sin(theta) * 2)
+        this.setVelocity(Math.cos(theta) * this.speed, Math.sin(theta) * this.speed)
         this.advance()
     }
     update() {

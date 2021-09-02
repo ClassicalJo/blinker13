@@ -6,11 +6,12 @@ let pool = Pool({
 
 
 
-let explosion = (x, y) => {
-    for (let i = 0; i < randInt(5, 20); i++) {
+let explosion = body => {
+    let m = body.width * body.height
+    for (let i = 0; i < randInt(m/500, m/100); i++) {
         pool.get({
-            x,
-            y,
+            x: body.x,
+            y: body.y,
             opacity: 1,
             color: 'pink',
             radius: 5,

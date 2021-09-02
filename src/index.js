@@ -72,6 +72,7 @@ class World extends kontra.Sprite.class {
         this.makeEnemies()
         this.makeStairs()
         this.makeGoal()
+        this.travel(this.currentCoords)
     }
     makeGoal() {
         let randX = randInt(0, WORLD_X - 1)
@@ -178,94 +179,45 @@ class World extends kontra.Sprite.class {
 
 
 let world = new World(3, 3, 3)
+
 const loop = kontra.GameLoop({
     update: () => {
         background.update()
         !isPaused && pool.update()
-        !isPaused && scene.update()
+        !isPaused && world.update()
         isPaused && UI.update()
-
-
-
-
     },
     render: () => {
         background.render()
         !isPaused && pool.render()
-        !isPaused && scene.render()
+        !isPaused && world.render()
         isPaused && UI.render()
-
     },
 })
 
 
 const player = new Player(400, 200, 'goldenrod', 'player', world.currentCoords)
-world.travel(world.currentCoords)
 const shadow = new Player(375, 500, 'purple', 'shadow', world.currentCoords)
-
-let enemy1 = new Enemy(500, 500, 40, world.currentCoords)
-let enemy2 = new Enemy(701, 500, 40, world.currentCoords)
 
 let playerMap = { shadow, player }
 let activeSprite = 'player'
 
-
-let blackScreen = kontra.Sprite({
-    width: world.width,
-    height: world.height,
-    color: 'black',
-})
-let spaceGas = (x, y, speed, color) => kontra.Sprite({
-    x,
-    y,
-    width: WORLD_WIDTH * 4,
-    height: WORLD_HEIGHT,
-    color: color,
-    opacity: 0.2,
-    dx: speed,
-    render: function () {
-        let h = this.height / 2
-        let w = this.width / 8
-        let shape = [[[0, 0],
-        [
-            [w, -h, w, -h, w * 2, 0],
-            [w * 3, h, w * 3, h, w * 4, 0],
-            [w * 5, -h, w * 5, -h, w * 6, 0],
-            [w * 6, this.height, w * 6, this.height, w * 6, this.height],
-            [w * 5, this.height + h, w * 5, this.height + h, w * 4, this.height],
-            [w * 3, this.height - h, w * 3, this.height - h, w * 2, this.height],
-            [w, this.height + h, w, this.height + h, 0, this.height]
-        ],
-        [0, 0]]]
-        drawBeziers(this.context, this.color, shape)
-    },
-    update: function () {
-        this.advance()
-        if (this.x < - this.width / 2) this.x = 0
-    }})
-
 const background = kontra.Scene({
     id: 'background',
     children: [
-        blackScreen,
+        screen('black'),
         spaceGas(-1300, -500, -1, 'darkred'),
         spaceGas(-200, 500, -2.5, 'darkblue'),
         spaceGas(-1000, 800, -2, 'gray'),
         spaceGas(0, 0, -.5, 'purple'),
     ]
 })
-const scene = kontra.Scene({
-    id: 'world',
-    // children: [background, spaceGas(0, -400, -10, 'red'), world],
-    children: [world],
-})
 
 let dia = new DiaBody(300, 300, 100, 300)
 dia.add()
-player.add()
-shadow.add()
 
-// UI.start()
+
+UI.start()
 loop.start()
 
 
