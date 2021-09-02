@@ -48,25 +48,30 @@ class Combo {
         this.finished = false
 
     }
-    attack() {
+    tempCooldown(time) {
+        this.cooldown = true
+        this.timeouts.push(setTimeout(() => this.cooldown = false, time))
+    }
+
+    attack(body) {
         if (this.cooldown || this.finished) return
         if (this.timer === 0) {
             this.start()
-            this.first()
+            this.first(body)
         }
         else if (this.timer > 150) {
-            this.lance()
-            let cooldown = 1000
-            this.cooldown = true
+            this.lance(body)
+            this.tempCooldown(1000)
             this.timeouts.push(setTimeout(() => {
-                this.cooldown = false
                 this.end()
-            }, cooldown))
+            }, 1000))
 
         }
 
     }
-    first() {
+    first(body) {
+        body.tempInvulnerable(500)
+        this.tempCooldown(150)
         let move = 20;
         let swordOffset = { x: -this.body.width * 4, y: -this.body.height * 4 }
         if (noDirection()) {
@@ -78,22 +83,21 @@ class Combo {
         }
         let sword = new Sword(swordOffset, this.body)
         sword.add()
+        playSFX('lightsaber')
     }
-    lance() {
+    lance(body) {
         let totalDistance = 300
         let frames = 10
         let move = totalDistance / frames
         if (noDirection()) {
-            let direction = getDirectionVector(this.body)
-            if (this.body.dx !== 0 && this.body.dy !== 0) this.body.setVelocity(direction.x * move, direction.y * move)
+            let direction = getDirectionVector(body)
+            if (body.dx !== 0 && body.dy !== 0) body.setVelocity(direction.x * move, direction.y * move)
         }
         else {
-            this.body.setVelocity(leftRightSwitch(-move, move, 0), upDownSwitch(-move, move, 0))
+            body.setVelocity(leftRightSwitch(-move, move, 0), upDownSwitch(-move, move, 0))
         }
-        let shield = new Shield(this.body, this.body.width * 10, this.body.height * 1.5, frames)
+        let shield = new Shield(body, body.width * 10, body.height * 1.5, frames)
         shield.add()
-
-
     }
     start() {
         this.intervals.push(setInterval(() => this.timer += 100, 100))
@@ -119,7 +123,6 @@ class RectBody extends kontra.Sprite.class {
         this.coords = coords
         this.invulnerable = false
         this.label = 'RectBody'
-
     }
 
     updateVertices() {
@@ -150,21 +153,16 @@ class RectBody extends kontra.Sprite.class {
         return this
     }
 
-
     setCollision(bool, time) {
         if (time) this.timeouts.push(setTimeout(() => this.canCollide = bool, time))
         else this.canCollide = bool
     }
+
     collide() {
         return
     }
     add() {
         world.add(this.coords, this)
-    }
-    travel(coords) {
-        world.getQuadrant(coords).remove(this)
-        this.coords = coords
-        world.getQuadrant(coords).add(this)
     }
     setInvulnerable(bool, time) {
         if (time) this.timeouts.push(setTimeout(() => this.invulnerable = bool, time))
@@ -188,36 +186,6 @@ class Step {
             this.timeout = stepTimeout
     }
 }
-// class Combo1 extends Combo {
-//     constructor() {
-//         let step1 = new Step(20, 500)
-//         let step2 = new Step(5, 1000)
-//         let step3 = new Step(25, 1000)
-//         super([step1, step2, step3], 500, 4000);
-//         this.attackDistance = 50
-
-//     }
-//     attack(body) {
-//         let move = this.steps[this.currentStep].distance
-//         let swordOffset = { x: -body.width * 4, y: -body.height * 4 }
-//         if (noDirection()) {
-//             let direction = getDirectionVector(body)
-//             if (body.dx !== 0 && body.dy !== 0) {
-//                 body.dx = direction.x * move
-//                 body.dy = direction.y * move
-//             }
-//             let sword = new Sword(swordOffset, body)
-//             sword.add()
-//         }
-//         else {
-//             body.dx = leftRightSwitch(-move, move, 0)
-//             body.dy = upDownSwitch(-move, move, 0)
-//             let sword = new Sword(swordOffset, body)
-//             sword.add(body.coords)
-//         }
-//     }
-// }
-
 
 class Player extends RectBody {
     constructor(x, y, color, name, coords) {
@@ -233,11 +201,11 @@ class Player extends RectBody {
         this.label = 'player'
     }
     attack() {
-        if(this.combo.cooldown) return
-        this.released = false
-        this.tempInvulnerable(150)
-        this.combo.attack(this)
-        if (this.combo.finished) this.combo = null
+        if (!this.combo || this.combo.finished) return
+        else {
+
+            this.combo.attack(this)
+        }
     }
 
     canAttack = () => keyPressed('shift') && !this.attackCooldown && this.released
@@ -281,24 +249,28 @@ class Player extends RectBody {
         }
     }
     collide(body) {
-        if (!this.canCollide || this.invulnerable) return
+        if (!this.canCollide || this.invulnerable || !this.isActive()) return
         if (body instanceof Enemy) {
             this.tempInvulnerable(1000)
             let inverse = kontra.Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
-            
+
         }
     }
-    
+    travel(coords) {
+        playerMap[toggleShadow(activeSprite)].setVelocity(0, 0)
+        world.getQuadrant(coords).remove(this)
+        this.coords = coords
+        world.getQuadrant(coords).add(this)
+    }
     update() {
         if (!this.isActive()) return
         if (this.shouldCancel()) this.cancel()
         if (this.canAttack()) {
             if (!this.combo) this.combo = new Combo(this)
+            if (this.combo.finished) this.combo = null
             this.attack()
-            // if (this.combo.shouldReset()) this.reset()
-            // else this.setReady(this.combo.cooldown)
         }
         else if (!keyPressed('shift')) this.released = true
         this.move()
@@ -312,7 +284,7 @@ class Player extends RectBody {
             [[0, 30], [[0, 35, -10, 40, -30, 50]], [25, 30]],
             [[30, 0], [[40, 0, 40, 25, 30, 25]], [30, 0]],
         ]
-        drawRect(this.context, this.invulnerable ? WORLD_LIFETIME % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
+        drawRect(this.context, this.invulnerable ? worldLifetime % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
         this.context.globalCompositeOperation = 'lighten'
         drawBeziers(this.context, `rgba(255,255,255,1)`, shapes)
 
@@ -357,10 +329,8 @@ let switcherooOnCooldown = false
 class Sword extends RectBody {
     constructor(offset, body) {
         let swingOffset = degToRad(135)
-        super(
-            getPointInCircle.x(body, offset.x, body.rotation + swingOffset),
-            getPointInCircle.y(body, offset.y, body.rotation + swingOffset),
-            100, 5, body.coords);
+        let { x, y } = getPointInCircle(body, offset, body.rotation + swingOffset)
+        super(x, y, 100, 5, body.coords);
         this.ttl = 10
         this.label = 'sword'
         this.offset = offset
@@ -380,15 +350,14 @@ class Sword extends RectBody {
         return kontra.randInt(min, max)
     }
     update() {
-        if (this.isAlive()) {
-            this.ttl -= 1
-            let speed = this.swing.total / this.swing.duration
-            this.rotation += speed
-            this.swing.accumulated += speed
-            this.x = this.center.x + this.offset.x * Math.cos(this.rotation)
-            this.y = this.center.y + this.offset.y * Math.sin(this.rotation)
-            this.updateVertices()
-        }
+        this.ttl -= 1
+        let speed = this.swing.total / this.swing.duration
+        this.rotation += speed
+        this.swing.accumulated += speed
+        let { x, y } = getPointInCircle(this.center, this.offset, this.rotation)
+        this.setPosition(x, y)
+        this.updateVertices()
+
     }
 
 }
@@ -410,6 +379,14 @@ class Enemy extends RectBody {
         this.remove()
     }
     collide(body) {
+        if (body instanceof Shield) {
+            this.setCollision(false)
+            let damage = body.damage()
+            new Damage(this, damage)
+            this.hp -= damage
+            this.setCollision(true, 1000)
+            this.hp <= 0 && this.die()
+        }
         if (body instanceof Player) {
             //another thing
         }
@@ -425,8 +402,7 @@ class Enemy extends RectBody {
 
     move() {
         this.rotation += degToRad(1)
-        let theta = getTheta(this, player)
-
+        let theta = getTheta(this, playerMap[activeSprite])
 
         this.setVelocity(Math.cos(theta) * 2, Math.sin(theta) * 2)
         this.advance()
@@ -612,10 +588,10 @@ class Stairs extends RectBody {
         if (this.scaleX < 1) this.enlarge = true
 
         if (this.colliding) {
-            this.rotation += degToRad(2)
+            this.rotation += degToRad(-2)
             this.colliding = false
         }
-        else this.rotation += degToRad(1)
+        else this.rotation += degToRad(-1)
         if (this.shouldAbsorb > 10) {
             this.shouldAbsorb = 0
             this.color === 'silver' ? exhale(this) : absorb(this)
@@ -630,8 +606,8 @@ class Stairs extends RectBody {
 
 
 class DiaBody extends RectBody {
-    constructor(x, y, width, height) {
-        super(x, y, width, height)
+    constructor(x, y, width, height, coords) {
+        super(x, y, width, height, coords)
         this.color = 'yellow'
         this.vertices = this.getVertices()
     }
@@ -664,11 +640,16 @@ class DiaBody extends RectBody {
 
 class Shield extends DiaBody {
     constructor(body, width, height, ttl) {
-        super(body.x, body.y, width, height);
+        super(body.x, body.y, width, height, body.coords);
         this.color = 'green'
         this.body = body
         this.opacity = 0.3
         this.ttl = ttl
+    }
+    damage() {
+        let min = 15
+        let max = 20
+        return kontra.randInt(min, max)
     }
     update() {
         this.setPosition(this.body.x, this.body.y)
@@ -676,9 +657,19 @@ class Shield extends DiaBody {
         this.ttl -= 1
         this.vertices = this.getVertices()
     }
+}
+
+class Goal extends RectBody {
+    constructor(coord) {
+        super(WORLD_WIDTH / 2 - 25, WORLD_HEIGHT / 2 - 25, 50, 50, coord)
+        this.color = 'white'
+    }
+    update() {
+        this.rotation += degToRad(1)
+    }
     collide(body) {
-        if (body instanceof Enemy) {
-            console.log('enemy hit')
+        if (body instanceof Player) {
+            UI.win()
         }
     }
 }

@@ -1,17 +1,23 @@
 initKeys()
-const WORLD_X = 1
-const WORLD_Y = 1
+const WORLD_X = 3
+const WORLD_Y = 3
 const WORLD_Z = 3
 const WORLD_WIDTH = document.querySelector('canvas').width
 const WORLD_HEIGHT = document.querySelector('canvas').height
-let WORLD_LIFETIME = 0
-const PAUSE = true
+let worldLifetime = 0
+let isPaused = true
+let bgmInitialized = false
+
 keyMap['ControlLeft'] = 'ctrl'
 keyMap['ShiftLeft'] = 'shift'
+keyMap['Escape'] = 'esc'
 
-let getPointInCircle = {
-    x: (vector, r, theta) => vector.x + r * Math.cos(theta),
-    y: (vector, r, theta) => vector.y + r * Math.sin(theta),
+function getPointInCircle(vector, r, theta) {
+    return {
+        x: vector.x + r.x * Math.cos(theta),
+        y: vector.y + r.y * Math.sin(theta),
+    }
+
 }
 
 bindKeys('ctrl', function () {
@@ -19,6 +25,14 @@ bindKeys('ctrl', function () {
     switcherooOnCooldown = true
     switcheroo()
     setTimeout(() => switcherooOnCooldown = false, 500)
+})
+
+bindKeys('esc', () => {
+    if (!bgmInitialized) {
+        bgmInitialized = true
+        // playBGM('song')
+    }
+    isPaused = !isPaused
 })
 
 //REFACTOREAR UUUUUU console.log
@@ -69,9 +83,17 @@ class World extends kontra.Sprite.class {
         this.stairMap = {}
         this.width = WORLD_WIDTH
         this.height = WORLD_HEIGHT
+        this.exploredMaps = new Set()
         this.makeEnemies()
         this.makeStairs()
+        this.makeGoal()
         UI.start()
+    }
+    makeGoal() {
+        let randX = randInt(0, WORLD_X - 1)
+        let randY = randInt(0, WORLD_Y - 1)
+        let goal = new Goal(new Coords(randX, randY, WORLD_Z - 1))
+        this.getQuadrant(new Coords(randX, randY, WORLD_Z - 1)).add(goal)
     }
     makeStairs() {
         function getTwoRandInts(min, max) {
@@ -141,16 +163,16 @@ class World extends kontra.Sprite.class {
         pool.clear()
         this.currentQuadrant.clear()
         this.currentCoords = coords
+        this.exploredMaps.add(coords)
         this.currentQuadrant = this.getQuadrant(coords)
     }
     render() {
-        UI.render()
         this.currentQuadrant.bodies.forEach(key => {
             key.render()
         })
     }
     update() {
-        WORLD_LIFETIME++
+        worldLifetime++
         let bodies = this.currentQuadrant.bodies
         for (let i = bodies.length - 1; i >= 0; i--) {
             for (let j = i - 1; j >= 0; j--) {
@@ -175,20 +197,26 @@ let world = new World(3, 3, 3)
 const loop = kontra.GameLoop({
     update: () => {
         background.update()
-        PAUSE && scene.update()
-        pool.update()
+        !isPaused && pool.update()
+        !isPaused && scene.update()
+        isPaused && UI.update()
+
+
+
 
     },
     render: () => {
         background.render()
-        pool.render()
-        PAUSE && scene.render()
+        !isPaused && pool.render()
+        !isPaused && scene.render()
+        isPaused && UI.render()
 
     },
 })
 
 
 const player = new Player(400, 200, 'goldenrod', 'player', world.currentCoords)
+world.travel(world.currentCoords)
 const shadow = new Player(375, 500, 'purple', 'shadow', world.currentCoords)
 
 let enemy1 = new Enemy(500, 500, 40, world.currentCoords)
@@ -258,5 +286,6 @@ shadow.add()
 
 
 loop.start()
+
 
 
