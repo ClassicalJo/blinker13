@@ -108,8 +108,6 @@ class Combo {
         this.timeouts.forEach(key => clearTimeout(key))
         this.finished = true
     }
-
-
 }
 
 class RectBody extends kontra.Sprite.class {
@@ -164,10 +162,6 @@ class RectBody extends kontra.Sprite.class {
     add() {
         world.add(this.coords, this)
     }
-    setInvulnerable(bool, time) {
-        if (time) this.timeouts.push(setTimeout(() => this.invulnerable = bool, time))
-        else this.invulnerable = bool
-    }
     tempInvulnerable(time) {
         this.invulnerable = true
         this.timeouts.push(setTimeout(() => this.invulnerable = false, time))
@@ -177,13 +171,6 @@ class RectBody extends kontra.Sprite.class {
         this.timeouts.forEach(key => clearTimeout(key))
         this.intervals.forEach(key => clearInterval(key))
         this.ttl = 0
-    }
-}
-
-class Step {
-    constructor(stepDistance, stepTimeout) {
-        this.distance = stepDistance,
-            this.timeout = stepTimeout
     }
 }
 
@@ -285,7 +272,6 @@ class Player extends RectBody {
         ]
         drawRect(this.context, this.invulnerable ? worldLifetime % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
         drawBeziers(this.context, `rgba(255,255,255,1)`, shapes)
-
     }
 }
 
@@ -306,7 +292,7 @@ class Link extends RectBody {
         let speed = distanceToTarget(this, this.destiny) / this.ttl
         let theta = getTheta(this, this.destiny)
         this.setVelocity(speed * Math.cos(theta), speed * Math.sin(theta))
-        this.ttl -= 1 
+        this.ttl -= 1
         this.advance()
     }
 
@@ -409,16 +395,17 @@ class Enemy extends RectBody {
 
 class Damage extends kontra.Sprite.class {
     constructor(body, damage) {
-        super();
-        this.center = body
-        this.x = body.x
-        this.y = body.y
-        this.ttl = 100
-        this.value = damage
-        this.color = 'white'
-        this.dx = kontra.randInt(-2, 2)
-        this.dy = kontra.randInt(-5, -3) - 2
-        this.ddy = 0.2
+        super({
+            center: body,
+            x: body.x,
+            y: body.y,
+            ttl: 100,
+            value: damage,
+            color: 'white',
+            dx: randInt(-2, 2),
+            dy: randInt(-5, -3) - 2,
+            ddy: 0.2
+        });
         this.add()
     }
     add() {
@@ -465,7 +452,8 @@ class Quadrant {
     }
     clear() {
         for (let i = 0; i < this.bodies.length; i++) {
-            if (this.bodies[i] instanceof Sword) {
+            if (this.bodies[i] instanceof Sword ||
+                this.bodies[i] instanceof Shield) {
                 this.bodies.splice(i, 1)
             }
         }
@@ -507,7 +495,7 @@ class Wall extends RectBody {
         if (body instanceof Player && body.isActive()) {
             let target = { x: body.x, y: body.y }
             let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
-            let min = 50
+            let min = 100
             let max = { x: world.width - min, y: world.height - min }
             if (this.height > this.width) {
                 target.x = body.x > max.x ? min : max.x
@@ -518,15 +506,12 @@ class Wall extends RectBody {
                 body.y += inverseSpeed.y
             }
             if (this.destiny && this.enableTravel) {
+                Object.keys(playerMap).forEach(key => {
+                    playerMap[key].setPosition(target.x, target.y)
+                    playerMap[key].travel(this.destiny)
+                })
                 world.travel(this.destiny)
-                player
-                    .setPosition(target.x, target.y)
-                    .travel(this.destiny)
-                shadow
-                    .setPosition(target.x, target.y)
-                    .travel(this.destiny)
             }
-
         }
     }
 }
@@ -561,14 +546,12 @@ class Stairs extends RectBody {
         if (body instanceof Player) this.colliding = true
         if (body instanceof Player && this.destiny !== undefined && keyPressed('space')) {
             world.travel(this.destiny.coords)
-            player
-                .setPosition(this.destiny.x, this.destiny.y + 100)
-                .tempInvulnerable(1000)
-                .travel(this.destiny.coords)
-            shadow
-                .setPosition(this.destiny.x, this.destiny.y + 100)
-                .tempInvulnerable(1000)
-                .travel(this.destiny.coords)
+            Object.keys(playerMap).forEach(key => {
+                playerMap[key]
+                    .setPosition(this.destiny.x, this.destiny.y + 100)
+                    .tempInvulnerable(1000)
+                    .travel(this.destiny.coords)
+            })
         }
     }
     update() {
@@ -620,7 +603,6 @@ class DiaBody extends RectBody {
 
     }
     update() {
-        // this.rotation += degToRad(1)
         this.vertices = this.getVertices()
     }
     draw() {

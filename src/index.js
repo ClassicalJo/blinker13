@@ -35,18 +35,6 @@ bindKeys('esc', () => {
     isPaused = !isPaused
 })
 
-//REFACTOREAR UUUUUU console.log
-let directions = {
-    'left': kontra.Vector(-1, 0),
-    'right': kontra.Vector(1, 0),
-    'up': kontra.Vector(0, -1),
-    'down': kontra.Vector(0, 1),
-    'rightup': kontra.Vector(1, -1).normalize(),
-    'rightdown': kontra.Vector(1, 1).normalize(),
-    'leftdown': kontra.Vector(-1, 1).normalize(),
-    'leftup': kontra.Vector(-1, -1).normalize(),
-}
-
 function getDirectionVector(body) {
     let vector = kontra.Vector(body.dx, body.dy)
     if (vector.x === 0 && vector.y === 0) return kontra.Vector(0, -1).normalize()
@@ -57,19 +45,16 @@ function getDirection(body) {
     let { x, y } = getDirectionVector(body)
     let absX = Math.abs(x)
     let absY = Math.abs(y)
-
-    if (x === NaN && y === NaN) return directions.leftup
     let thresholdUnit = 0.35
     let isMono = (Math.max(absX, absY) - Math.min(absX, absY)) > thresholdUnit
-
     if (isMono) {
-        if (absX > absY) return x < 0 ? directions.left : directions.right
-        else return y < 0 ? directions.up : directions.down
+        if (absX > absY) return x < 0 ? { x: -1, y: 0 } : { x: 1, y: 0 }
+        else return y < 0 ? { x: 0, y: -1 } : { x: 0, y: 1 }
     }
     else {
-        let a = x < 0 ? 'left' : 'right'
-        let b = y < 0 ? 'up' : 'down'
-        return directions[a + b]
+        let a = x < 0 ? -1 : 1
+        let b = y < 0 ? -1 : 1
+        return kontra.Vector(a, b).normalize()
     }
 }
 
@@ -87,7 +72,6 @@ class World extends kontra.Sprite.class {
         this.makeEnemies()
         this.makeStairs()
         this.makeGoal()
-        UI.start()
     }
     makeGoal() {
         let randX = randInt(0, WORLD_X - 1)
@@ -234,34 +218,31 @@ let blackScreen = kontra.Sprite({
 let spaceGas = (x, y, speed, color) => kontra.Sprite({
     x,
     y,
-    width: world.width * 4,
-    height: world.height,
+    width: WORLD_WIDTH * 4,
+    height: WORLD_HEIGHT,
     color: color,
     opacity: 0.2,
     dx: speed,
     render: function () {
-        this.context.beginPath();
-        // this.context.globalCompositeOperation = 'lighten'
-        this.context.fillStyle = this.color
-        this.context.moveTo(0, 0)
-        let heightWave = this.height / 2
-        let widthWave = this.width / 8
-        this.context.bezierCurveTo(widthWave, -heightWave, widthWave, -heightWave, widthWave * 2, 0);
-        this.context.bezierCurveTo(widthWave * 3, heightWave, widthWave * 3, heightWave, widthWave * 4, 0);
-        this.context.bezierCurveTo(widthWave * 5, -heightWave, widthWave * 5, -heightWave, widthWave * 6, 0);
-        this.context.lineTo(widthWave * 6, this.height)
-        this.context.bezierCurveTo(widthWave * 5, this.height + heightWave, widthWave * 5, this.height + heightWave, widthWave * 4, this.height);
-        this.context.bezierCurveTo(widthWave * 3, this.height - heightWave, widthWave * 3, this.height - heightWave, widthWave * 2, this.height);
-        this.context.bezierCurveTo(widthWave, this.height + heightWave, widthWave, this.height + heightWave, 0, this.height);
-        this.context.fill()
+        let h = this.height / 2
+        let w = this.width / 8
+        let shape = [[[0, 0],
+        [
+            [w, -h, w, -h, w * 2, 0],
+            [w * 3, h, w * 3, h, w * 4, 0],
+            [w * 5, -h, w * 5, -h, w * 6, 0],
+            [w * 6, this.height, w * 6, this.height, w * 6, this.height],
+            [w * 5, this.height + h, w * 5, this.height + h, w * 4, this.height],
+            [w * 3, this.height - h, w * 3, this.height - h, w * 2, this.height],
+            [w, this.height + h, w, this.height + h, 0, this.height]
+        ],
+        [0, 0]]]
+        drawBeziers(this.context, this.color, shape)
     },
     update: function () {
         this.advance()
         if (this.x < - this.width / 2) this.x = 0
-
-    }
-
-})
+    }})
 
 const background = kontra.Scene({
     id: 'background',
@@ -284,7 +265,7 @@ dia.add()
 player.add()
 shadow.add()
 
-
+// UI.start()
 loop.start()
 
 
