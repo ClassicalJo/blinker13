@@ -16,9 +16,6 @@ export default {
                 ttl: true,
                 velocity:true,
             },
-            scene: {
-                group: true,
-            },
             vector: {
                 angle: true,
                 clamp: true,

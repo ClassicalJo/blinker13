@@ -1,4 +1,4 @@
-import { keyPressed } from "./kontra"
+import { keyPressed, Vector } from "./kontra"
 
 
 export function getPointInCircle(vector, r, theta) {
@@ -37,3 +37,8 @@ export function rotateVertex(theta, vertex, origin) {
 
 }
 
+export function getDirectionVector(body) {
+    let vector = Vector(body.dx, body.dy)
+    if (vector.x === 0 && vector.y === 0) return Vector(0, -1).normalize()
+    return vector.normalize()
+}

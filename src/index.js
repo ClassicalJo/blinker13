@@ -1,4 +1,4 @@
-import { init, initKeys, keyMap, bindKeys, randInt, Vector, Sprite, GameLoop, Scene } from './kontra'
+import { init, initKeys, keyMap, bindKeys, randInt, Vector, Sprite, GameLoop } from './kontra'
 import { Quadrant, Depth, Coords } from './quadrants.js'
 import { Enemy, Stairs, DiaBody, Goal, Player, Link } from './sprites.js'
 import { screen, spaceGas } from './images.js'
@@ -199,7 +199,7 @@ const loop = GameLoop({
 
 export let activeSprite = 'player'
 
-const background = Scene({
+const background = Sprite({
     id: 'background',
     children: [
         screen('black'),

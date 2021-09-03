@@ -3,7 +3,7 @@ import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_INITIAL_COORDS } from './init'
 import { drawBeziers, drawRamiel, drawRect, drawDia, drawPortal, drawCircle } from "./images"
 import { fire, explosion, absorb, exhale, smoke } from "./particles"
 import { playBGM, playSFX } from "./bgm"
-import { getPointInCircle, distanceToTarget, noDirection, leftRightSwitch, upDownSwitch, getTheta, rotateVertex, } from "./helpers"
+import { getDirectionVector, getPointInCircle, distanceToTarget, noDirection, leftRightSwitch, upDownSwitch, getTheta, rotateVertex, } from "./helpers"
 const { canvas, context } = init()
 
 
@@ -22,7 +22,19 @@ export class Combo {
         this.cooldown = true
         this.timeouts.push(setTimeout(() => this.cooldown = false, time))
     }
-
+    move(move) {
+        if (noDirection()) {
+            let direction = getDirectionVector(this.body).scale(move)
+            if (this.body.dx !== 0 && this.body.dy !== 0) this.body.setVelocity(direction.x, direction.y)
+            else {
+                let theta = this.body.rotation
+                this.body.setVelocity(move * Math.cos(theta), move * Math.sin(theta))
+            }
+        }
+        else {
+            this.body.setVelocity(leftRightSwitch(-move, move, 0), upDownSwitch(-move, move, 0))
+        }
+    }
     attack(body) {
         if (this.cooldown || this.finished) return
         if (this.timer === 0) {
@@ -44,28 +56,17 @@ export class Combo {
         this.tempCooldown(150)
         let move = 20;
         let swordOffset = { x: -this.body.width * 4, y: -this.body.height * 4 }
-        if (noDirection()) {
-            let direction = getDirectionVector(this.body).scale(move)
-            if (this.body.dx !== 0 && this.body.dy !== 0) this.body.setVelocity(direction.x, direction.y)
-        }
-        else {
-            this.body.setVelocity(leftRightSwitch(-move, move, 0), upDownSwitch(-move, move, 0))
-        }
+        this.move(move)
         let sword = new Sword(swordOffset, this.body, this.body.container)
         sword.add()
         playSFX('lightsaber')
     }
     lance(body) {
+        body.tempInvulnerable(500)
         let totalDistance = 300
         let frames = 10
         let move = totalDistance / frames
-        if (noDirection()) {
-            let direction = getDirectionVector(body)
-            if (body.dx !== 0 && body.dy !== 0) body.setVelocity(direction.x * move, direction.y * move)
-        }
-        else {
-            body.setVelocity(leftRightSwitch(-move, move, 0), upDownSwitch(-move, move, 0))
-        }
+        this.move(move)
         let shield = new Shield(body, body.width * 10, body.height * 1.5, frames, body.container)
         shield.add()
     }
