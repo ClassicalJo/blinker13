@@ -1,4 +1,4 @@
-import {Vector} from "./kontra"
+import { Vector } from "./kontra"
 export function SAT(body1, body2) {
     function getNormals(vertices) {
         let axes = []
