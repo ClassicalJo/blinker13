@@ -1,11 +1,11 @@
-import kontra from "./kontra"
+import {Vector} from "./kontra"
 export function SAT(body1, body2) {
     function getNormals(vertices) {
         let axes = []
         for (let i = 0; i < vertices.length; i++) {
-            let p1 = kontra.Vector(vertices[i].x, vertices[i].y)
+            let p1 = Vector(vertices[i].x, vertices[i].y)
             let next = (i + 1 === vertices.length) ? 0 : i + 1
-            let p2 = kontra.Vector(vertices[next].x, vertices[next].y)
+            let p2 = Vector(vertices[next].x, vertices[next].y)
             let edge = p1.subtract(p2)
             let normal = { x: edge.y, y: -edge.x }
             axes.push(normal)
@@ -14,7 +14,7 @@ export function SAT(body1, body2) {
     }
 
     function getProjection(axis, vertices) {
-        let vector = kontra.Vector(axis.x, axis.y)
+        let vector = Vector(axis.x, axis.y)
         let min = vector.dot(vertices[0])
         let max = min
         for (let i = 1; i < vertices.length; i++) {

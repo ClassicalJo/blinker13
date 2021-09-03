@@ -1,4 +1,4 @@
-import kontra from './kontra'
+import { bindKeys, Sprite, unbindKeys } from './kontra'
 import { WORLD_WIDTH, WORLD_HEIGHT } from './init'
 import { world } from './index'
 
@@ -7,7 +7,8 @@ function isSameCoord(coord1, coord2) {
 }
 export let UI = {
     win: function () {
-        kontra.bindKeys('esc', () => { })
+        // unbindKeys('esc',)
+        bindKeys('esc', () => { })
         Object.keys(UI.elements).forEach(key => UI.elements[key].show = false)
         UI.elements.victory.show = true
         world.isPaused = true
@@ -16,7 +17,7 @@ export let UI = {
         this.elements = {
             blackScreen: {
                 show: true,
-                sprite: kontra.Sprite({
+                sprite: Sprite({
                     width: WORLD_WIDTH,
                     height: WORLD_HEIGHT,
                     color: 'black',
@@ -29,7 +30,7 @@ export let UI = {
             },
             victory: {
                 show: false,
-                sprite: kontra.Sprite({
+                sprite: Sprite({
                     width: WORLD_WIDTH,
                     height: WORLD_HEIGHT,
                     color: 'blue',
@@ -38,7 +39,7 @@ export let UI = {
             },
             map: {
                 show: true,
-                sprite: kontra.Sprite({
+                sprite: Sprite({
                     width: 50,
                     height: 50,
                     color: 'blue',
@@ -80,7 +81,7 @@ export let UI = {
 }
 
 
-let coord = (x, y) => kontra.Sprite({
+let coord = (x, y) => Sprite({
     render: function () {
         this.context.fillStyle = 'white'
         this.context.font = "30px Arial";

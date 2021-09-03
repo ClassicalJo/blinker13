@@ -1,9 +1,8 @@
-import kontra from './kontra'
-let { Pool, randInt } = kontra
+import {Pool, randInt, Sprite, Vector} from './kontra'
 import { drawCircle } from './images'
 
 export let pool = Pool({
-    create: kontra.Sprite
+    create: Sprite
 })
 
 export let explosion = body => {
@@ -16,8 +15,8 @@ export let explosion = body => {
             color: 'pink',
             radius: 5,
             ttl: 100,
-            dx: kontra.randInt(-5, 5),
-            dy: kontra.randInt(-5, 5),
+            dx: randInt(-5, 5),
+            dy: randInt(-5, 5),
             update: function () {
                 if (this.opacity > 0.02) this.opacity -= 0.02
                 this.advance()
@@ -31,7 +30,7 @@ export let explosion = body => {
 }
 
 export let fire = body => {
-    let speed = kontra.Vector(body.dx * -1, body.dy * -1).normalize()
+    let speed = Vector(body.dx * -1, body.dy * -1).normalize()
     pool.get({
         x: body.x + speed.x * 15,
         y: body.y + speed.y * 15,
@@ -47,7 +46,7 @@ export let fire = body => {
 }
 export let smoke = body => {
     if (Math.abs(body.dx) < .2 && Math.abs(body.dy) < .2) return
-    let speed = kontra.Vector(body.dx * -1, body.dy * -1).normalize()
+    let speed = Vector(body.dx * -1, body.dy * -1).normalize()
     for (let i = 0; i < 3; i++) {
         pool.get({
             x: body.x + speed.x * 10 + randInt(-2, 2),
@@ -71,11 +70,11 @@ export let smoke = body => {
 
 export let absorb = body => {
     let radiusEffect = 100
-    let dest = kontra.Vector(body.x, body.y)
-    let rand = kontra.Vector(kontra.randInt(-300, 300), randInt(-300, 300)).normalize().scale(radiusEffect)
+    let dest = Vector(body.x, body.y)
+    let rand = Vector(randInt(-300, 300), randInt(-300, 300)).normalize().scale(radiusEffect)
     let pos = dest.add(rand)
     let theta = Math.atan2(body.y - pos.y, body.x - pos.x)
-    let direction = kontra.Vector(Math.cos(theta), Math.sin(theta)).normalize()
+    let direction = Vector(Math.cos(theta), Math.sin(theta)).normalize()
     let frames = 100
     let speed = pos.distance(dest) / frames
     pool.get({
@@ -100,10 +99,10 @@ export let absorb = body => {
 
 export let exhale = body => {
     let radiusEffect = 100
-    let pos = kontra.Vector(body.x, body.y)
-    let dest = kontra.Vector(kontra.randInt(-3, 3), randInt(-3, 3))
+    let pos = Vector(body.x, body.y)
+    let dest = Vector(randInt(-3, 3), randInt(-3, 3))
     let theta = Math.atan2(dest.y - pos.y, dest.x - pos.x)
-    let target = kontra.Vector(pos.x + radiusEffect * Math.cos(theta), pos.y + radiusEffect * Math.sin(theta))
+    let target = Vector(pos.x + radiusEffect * Math.cos(theta), pos.y + radiusEffect * Math.sin(theta))
     let ttl = 100
     let { x: dx, y: dy } = dest.normalize().scale(target.distance(pos) / ttl)
     pool.get({

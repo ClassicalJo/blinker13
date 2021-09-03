@@ -1,4 +1,4 @@
-import kontra from './kontra.js'
+import { init, initKeys, keyMap, bindKeys,randInt, Vector, Sprite, GameLoop, Scene} from './kontra'
 import { Quadrant, Depth, Coords } from './quadrants.js'
 import { Enemy, Stairs, DiaBody, Goal, Player, Link } from './sprites.js'
 import { screen, spaceGas } from './images.js'
@@ -8,7 +8,6 @@ import { SAT } from './sat.js'
 import { playBGM } from './bgm.js'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_X, WORLD_Y, WORLD_Z, WORLD_INITIAL_COORDS } from './init'
 
-const { init, initKeys, keyMap, bindKeys,randInt} = kontra
 const { canvas, context } = init()
 initKeys()
 let bgmInitialized = false
@@ -37,8 +36,8 @@ bindKeys('esc', () => {
 })
 
 function getDirectionVector(body) {
-    let vector = kontra.Vector(body.dx, body.dy)
-    if (vector.x === 0 && vector.y === 0) return kontra.Vector(0, -1).normalize()
+    let vector = Vector(body.dx, body.dy)
+    if (vector.x === 0 && vector.y === 0) return Vector(0, -1).normalize()
     return vector.normalize()
 }
 
@@ -55,11 +54,11 @@ function getDirection(body) {
     else {
         let a = x < 0 ? -1 : 1
         let b = y < 0 ? -1 : 1
-        return kontra.Vector(a, b).normalize()
+        return Vector(a, b).normalize()
     }
 }
 
-class World extends kontra.Sprite.class {
+class World extends Sprite.class {
     constructor(x, y, z) {
         super();
         this.size = { x: WORLD_X, y: WORLD_Y, z: WORLD_Z }
@@ -197,7 +196,7 @@ export let world = new World(3, 3, 3)
 world.player.add()
 world.shadow.add()
 
-const loop = kontra.GameLoop({
+const loop = GameLoop({
     update: () => {
         background.update()
         !isWorldPaused() && pool.update()
@@ -217,7 +216,7 @@ const loop = kontra.GameLoop({
 
 export let activeSprite = 'player'
 
-const background = kontra.Scene({
+const background = Scene({
     id: 'background',
     children: [
         screen('black'),

@@ -1,8 +1,8 @@
 import { WORLD_HEIGHT, WORLD_WIDTH } from "./init";
-import { rotateVertex } from "./sprites";
+import { rotateVertex } from "./helpers";
 
-import kontra from "./kontra";
-let { degToRad } = kontra
+import {Sprite, degToRad} from "./kontra";
+
 
 export function drawBeziers(ctx, color, shape) {
     ctx.fillStyle = color;
@@ -95,7 +95,7 @@ export function drawRamiel(ctx, color, w, h) {
 }
 
 export function screen(color) {
-    return kontra.Sprite({
+    return Sprite({
         width: WORLD_WIDTH,
         height: WORLD_HEIGHT,
         color: color,
@@ -103,7 +103,7 @@ export function screen(color) {
 }
 
 export function spaceGas(x, y, speed, color) {
-    return kontra.Sprite({
+    return Sprite({
         x,
         y,
         width: WORLD_WIDTH * 4,

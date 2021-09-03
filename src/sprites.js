@@ -1,51 +1,12 @@
-import kontra from "./kontra"
-
-import { Coords } from "./quadrants"
+import { degToRad, keyPressed, init, randInt, Sprite, Vector } from "./kontra"
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_INITIAL_COORDS } from './init'
 import { world } from './index'
 import { drawBeziers, drawRamiel, drawRect, drawDia, drawPortal, drawCircle } from "./images"
 import { fire, explosion, absorb, exhale, smoke } from "./particles"
 import { UI } from "./ui"
 import { playBGM, playSFX } from "./bgm"
-
-const { degToRad, keyPressed, init, randInt, initKeys, keyMap, bindKeys, Vector, angleToTarget } = kontra
+import { getPointInCircle, distanceToTarget, noDirection, leftRightSwitch, upDownSwitch, getTheta, rotateVertex, } from "./helpers"
 const { canvas, context } = init()
-
-function getPointInCircle(vector, r, theta) {
-    return {
-        x: vector.x + r.x * Math.cos(theta),
-        y: vector.y + r.y * Math.sin(theta),
-    }
-}
-
-function distanceToTarget(origin, dest) {
-    return Math.sqrt(Math.pow((dest.x - origin.x), 2) + Math.pow((dest.y - origin.y), 2))
-}
-
-function noDirection() {
-    return !keyPressed('up') && !keyPressed('down') && !keyPressed('left') && !keyPressed('right')
-}
-function leftRightSwitch(a, b, c) {
-    if (keyPressed('left')) return a
-    else if (keyPressed('right')) return b
-    else return c
-}
-function upDownSwitch(a, b, c) {
-    if (keyPressed('up')) return a
-    else if (keyPressed('down')) return b
-    else return c
-}
-
-function getTheta(origin, dest) {
-    return Math.atan2(dest.y - origin.y, dest.x - origin.x)
-}
-export function rotateVertex(theta, vertex, origin) {
-    return {
-        x: (vertex.x - origin.x) * Math.cos(theta) - (vertex.y - origin.y) * Math.sin(theta) + origin.x,
-        y: (vertex.x - origin.x) * Math.sin(theta) + (vertex.y - origin.y) * Math.cos(theta) + origin.y
-    }
-
-}
 
 
 export class Combo {
@@ -121,8 +82,8 @@ export class Combo {
     }
 }
 
-export class RectBody extends kontra.Sprite.class {
-    constructor(x, y, width, height, coords = new Coords(0, 0, 0)) {
+export class RectBody extends Sprite.class {
+    constructor(x, y, width, height, coords = { x: 0, y: 0, z: 0 }) {
         super({ x, y, width, height });
         this.anchor = { x: 0.5, y: 0.5 };
         this.canCollide = true;
@@ -250,7 +211,7 @@ export class Player extends RectBody {
         if (!this.canCollide || this.invulnerable || !this.isActive()) return
         if (body instanceof Enemy) {
             this.tempInvulnerable(1000)
-            let inverse = kontra.Vector(this.dx * -1, this.dy * -1).normalize()
+            let inverse = Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
             world.switcheroo()
@@ -331,7 +292,7 @@ export class Sword extends RectBody {
     damage() {
         let min = 15
         let max = 20
-        return kontra.randInt(min, max)
+        return randInt(min, max)
     }
     update() {
         this.ttl -= 1
@@ -388,7 +349,7 @@ export class Enemy extends RectBody {
 
 
 
-export class Damage extends kontra.Sprite.class {
+export class Damage extends Sprite.class {
     constructor(body, damage) {
         super({
             center: body,
@@ -434,7 +395,7 @@ export class Wall extends RectBody {
         if (body instanceof Wall) return
         if (body instanceof Player && body.isActive()) {
             let target = { x: body.x, y: body.y }
-            let inverseSpeed = kontra.Vector(body.dx * -1, body.dy * -1)
+            let inverseSpeed = Vector(body.dx * -1, body.dy * -1)
             let min = 100
             let max = { x: world.width - min, y: world.height - min }
             if (this.height > this.width) {
@@ -550,7 +511,7 @@ export class Shield extends DiaBody {
     damage() {
         let min = 15
         let max = 20
-        return kontra.randInt(min, max)
+        return randInt(min, max)
     }
     update() {
         this.setPosition(this.body.x, this.body.y)
