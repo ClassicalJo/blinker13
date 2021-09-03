@@ -5,7 +5,7 @@
 // use it in a demo.
 
 // Song data
-var lightsaber = {
+export var lightsaber = {
   songData: [
     { // Instrument 0
       i: [
@@ -64,7 +64,7 @@ var lightsaber = {
 // use it in a demo.
 
 // Song data
-var song = {
+export var song = {
   songData: [
     { // Instrument 0
       i: [

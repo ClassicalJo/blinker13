@@ -34,7 +34,7 @@
 //    further by deleting the code.
 
 
-var CPlayer = function() {
+export var CPlayer = function() {
 
     //--------------------------------------------------------------------------
     // Private methods

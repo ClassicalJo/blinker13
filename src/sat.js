@@ -1,4 +1,5 @@
-function SAT(body1, body2) {
+import kontra from "./kontra"
+export function SAT(body1, body2) {
     function getNormals(vertices) {
         let axes = []
         for (let i = 0; i < vertices.length; i++) {

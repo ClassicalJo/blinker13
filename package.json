@@ -10,5 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "kontra": "^7.1.3"
+  },
+  "devDependencies": {
+    "rollup": "^2.56.3",
+    "rollup-plugin-kontra": "^1.0.1"
   }
 }

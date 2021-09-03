@@ -1,20 +1,7 @@
+import { CPlayer } from "./audio";
+import { song, lightsaber } from "./sfx";
+
 var cPlayer = new CPlayer();
-// cPlayer.init(lightsaber);
-// cPlayer.generate()
-// var wave = cPlayer.createWave();
-// var audio = document.createElement("audio");
-
-
-// cPlayer.init(song);
-// while (cPlayer.generate() < 1) {
-//     console.log('loadgin')
-// }
-// soundReady = true
-// var wav2 = cPlayer.createWave();
-// var bg = document.createElement("audio");
-// bg.src = URL.createObjectURL(new Blob([wav2], { type: "audio/wav" }));
-// bg.play().then(() => actionReady = true).catch();
-
 class Sound {
     constructor(song) {
         cPlayer.init(song)
@@ -58,9 +45,11 @@ function checkReady() {
     if (!sfxReady && !bgmReady) checkReady()
 }
 
-function playSFX(sfx) {
+export function playSFX(sfx) {
     sfxMap[sfx].play()
 }
-function playBGM(music) {
+export function playBGM(music) {
     bgmMap[music].playBGM()
 }
+
+checkReady()

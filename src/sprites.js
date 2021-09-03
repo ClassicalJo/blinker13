@@ -1,5 +1,22 @@
-const { degToRad, keyPressed, init, initKeys, keyMap, bindKeys, Vector, angleToTarget } = kontra
+import kontra from "./kontra"
+
+import { Coords } from "./quadrants"
+import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_INITIAL_COORDS } from './init'
+import { world } from './index'
+import { drawBeziers, drawRamiel, drawRect, drawDia, drawPortal, drawCircle } from "./images"
+import { fire, explosion, absorb, exhale, smoke } from "./particles"
+import { UI } from "./ui"
+import { playBGM, playSFX } from "./bgm"
+
+const { degToRad, keyPressed, init, randInt, initKeys, keyMap, bindKeys, Vector, angleToTarget } = kontra
 const { canvas, context } = init()
+
+function getPointInCircle(vector, r, theta) {
+    return {
+        x: vector.x + r.x * Math.cos(theta),
+        y: vector.y + r.y * Math.sin(theta),
+    }
+}
 
 function distanceToTarget(origin, dest) {
     return Math.sqrt(Math.pow((dest.x - origin.x), 2) + Math.pow((dest.y - origin.y), 2))
@@ -22,22 +39,16 @@ function upDownSwitch(a, b, c) {
 function getTheta(origin, dest) {
     return Math.atan2(dest.y - origin.y, dest.x - origin.x)
 }
-function rotateVertex(theta, vertex, origin) {
+export function rotateVertex(theta, vertex, origin) {
     return {
         x: (vertex.x - origin.x) * Math.cos(theta) - (vertex.y - origin.y) * Math.sin(theta) + origin.x,
         y: (vertex.x - origin.x) * Math.sin(theta) + (vertex.y - origin.y) * Math.cos(theta) + origin.y
     }
 
 }
-class Coords {
-    constructor(x, y, z) {
-        this.x = x
-        this.y = y
-        this.z = z
-    }
-}
 
-class Combo {
+
+export class Combo {
     constructor(body) {
         this.timer = 0
         this.countdown = 4000
@@ -110,7 +121,7 @@ class Combo {
     }
 }
 
-class RectBody extends kontra.Sprite.class {
+export class RectBody extends kontra.Sprite.class {
     constructor(x, y, width, height, coords = new Coords(0, 0, 0)) {
         super({ x, y, width, height });
         this.anchor = { x: 0.5, y: 0.5 };
@@ -174,7 +185,7 @@ class RectBody extends kontra.Sprite.class {
     }
 }
 
-class Player extends RectBody {
+export class Player extends RectBody {
     constructor(x, y, color, name, coords) {
         super(x, y, 25, 25, coords);
         this.moveSpeed = 0.25
@@ -186,7 +197,6 @@ class Player extends RectBody {
         this.color = color
         this.name = name
         this.label = 'player'
-        this.add(world.currentCoords)
     }
     attack() {
         if (!this.combo || this.combo.finished) return
@@ -197,7 +207,7 @@ class Player extends RectBody {
     }
 
     canAttack = () => keyPressed('shift') && !this.attackCooldown && this.released
-    isActive = () => this.name === activeSprite
+    isActive = () => this.name === world.activeSprite
 
     shouldCancel = () => this.combo !== null && this.combo.canceled
     cancel() {
@@ -243,12 +253,12 @@ class Player extends RectBody {
             let inverse = kontra.Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
-            switcheroo()
+            world.switcheroo()
         }
     }
 
     travel(coords) {
-        playerMap[toggleShadow(activeSprite)].setVelocity(0, 0)
+        world.playerMap[world.toggleShadow(world.activeSprite)].setVelocity(0, 0)
         world.getQuadrant(coords).remove(this)
         this.coords = coords
         world.getQuadrant(coords).add(this)
@@ -271,13 +281,13 @@ class Player extends RectBody {
             [[0, 30], [[0, 35, -10, 40, -30, 50]], [25, 30]],
             [[30, 0], [[40, 0, 40, 25, 30, 25]], [30, 0]],
         ]
-        drawRect(this.context, this.invulnerable ? worldLifetime % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
+        drawRect(this.context, this.invulnerable ? world.lifetime % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
         drawBeziers(this.context, `rgba(255,255,255,1)`, shapes)
     }
 }
 
 
-class Link extends RectBody {
+export class Link extends RectBody {
     constructor(origin, dest) {
         super(origin.x, origin.y, 5, 5, origin.coords)
         this.radius = 10;
@@ -299,17 +309,8 @@ class Link extends RectBody {
 
 }
 
-let toggleShadow = str => str === 'player' ? 'shadow' : 'player'
-let switcheroo = () => {
 
-    let link = new Link(playerMap[activeSprite], playerMap[toggleShadow(activeSprite)])
-    link.add()
-    activeSprite = toggleShadow(activeSprite)
-    playerMap[activeSprite].tempInvulnerable(300)
-}
-let switcherooOnCooldown = false
-
-class Sword extends RectBody {
+export class Sword extends RectBody {
     constructor(offset, body) {
         let swingOffset = degToRad(135)
         let { x, y } = getPointInCircle(body, offset, body.rotation + swingOffset)
@@ -345,7 +346,7 @@ class Sword extends RectBody {
 
 }
 
-class Enemy extends RectBody {
+export class Enemy extends RectBody {
     constructor(x, y, maxHp, coords, speed = 2) {
         super(x, y, 50, 50, coords);
         this.maxHp = maxHp
@@ -356,7 +357,7 @@ class Enemy extends RectBody {
         this.speed = speed
     }
     draw() {
-        drawRamiel(this.context, this.invulnerable ? worldLifetime % 2 == 0 ? this.color : 'transparent' : this.color, this.width, this.height)
+        drawRamiel(this.context, this.invulnerable ? world.lifetime % 2 == 0 ? this.color : 'transparent' : this.color, this.width, this.height)
     }
     die() {
         explosion(this)
@@ -374,7 +375,7 @@ class Enemy extends RectBody {
 
     move() {
         this.rotation += degToRad(1)
-        let theta = getTheta(this, playerMap[activeSprite])
+        let theta = getTheta(this, world.playerMap[world.activeSprite])
         this.setVelocity(Math.cos(theta) * this.speed, Math.sin(theta) * this.speed)
         this.advance()
     }
@@ -387,7 +388,7 @@ class Enemy extends RectBody {
 
 
 
-class Damage extends kontra.Sprite.class {
+export class Damage extends kontra.Sprite.class {
     constructor(body, damage) {
         super({
             center: body,
@@ -418,62 +419,7 @@ class Damage extends kontra.Sprite.class {
     }
 }
 
-class Quadrant {
-    constructor(x, y, z) {
-        this.coords = new Coords(x, y, z)
-        this.bodies = []
-        this.width = WORLD_WIDTH
-        this.height = WORLD_HEIGHT
-        this.thickness = 5
-        this.frame = this.setFrame()
-        this.frame.forEach(key => this.add(key))
-    }
-    close() {
-        this.frame.forEach(key => key.enableTravel = false)
-    }
-    open() {
-        this.frame.forEach(key => key.enableTravel = true)
-    }
-    add(body) {
-        this.bodies.push(body)
-    }
-    remove(body) {
-        for (let i = 0; i < this.bodies.length; i++) {
-            if (this.bodies[i] === body) {
-                this.bodies.splice(i, 1)
-            }
-        }
-    }
-    clear() {
-        for (let i = 0; i < this.bodies.length; i++) {
-            if (this.bodies[i] instanceof Sword ||
-                this.bodies[i] instanceof Shield) {
-                this.bodies.splice(i, 1)
-            }
-        }
-    }
-    setFrame() {
-        let [w, h, t] = [this.width, this.height, this.thickness]
-        let validDestiny = () => {
-            let { x, y, z } = this.coords
-            let up = y - 1 >= 0 ? new Coords(x, y - 1, z) : null
-            let left = x - 1 >= 0 ? new Coords(x - 1, y, z) : null
-            let down = y + 1 < WORLD_Y ? new Coords(x, y + 1, z) : null
-            let right = x + 1 < WORLD_X ? new Coords(x + 1, y, z) : null
-            return [up, left, down, right]
-        }
-        let [up, left, down, right] = validDestiny(this.coords)
-        return [
-            new Wall(w / 2, t / 2, w, t, t, up),
-            new Wall(t / 2, t + h / 2, t, h, t, left),
-            new Wall(w - t / 2, h / 2 + t, t, h, t, right),
-            new Wall(w / 2, h - t / 2, w, t, t, down),
-        ]
-    }
-}
-
-
-class Wall extends RectBody {
+export class Wall extends RectBody {
     constructor(x, y, width, height, thickness, destiny) {
         super(x, y, width, height);
         this.thickness = thickness
@@ -500,9 +446,9 @@ class Wall extends RectBody {
                 body.y += inverseSpeed.y
             }
             if (this.destiny && this.enableTravel) {
-                Object.keys(playerMap).forEach(key => {
-                    playerMap[key].setPosition(target.x, target.y)
-                    playerMap[key].travel(this.destiny)
+                Object.keys(world.playerMap).forEach(key => {
+                    world.playerMap[key].setPosition(target.x, target.y)
+                    world.playerMap[key].travel(this.destiny)
                 })
                 world.travel(this.destiny)
             }
@@ -510,20 +456,8 @@ class Wall extends RectBody {
     }
 }
 
-class Depth {
-    constructor(x, y, z) {
-        this.quadrants = []
-        for (let i = 0; i < x; i++) {
-            let column = []
-            for (let j = 0; j < y; j++) {
-                column.push(new Quadrant(i, j, z))
-            }
-            this.quadrants.push(column)
-        }
-    }
-}
 
-class Stairs extends RectBody {
+export class Stairs extends RectBody {
     constructor(x, y, coords, color) {
         super(x, y, 55, 55, coords);
         this.color = color
@@ -540,8 +474,8 @@ class Stairs extends RectBody {
         if (body instanceof Player) this.colliding = true
         if (body instanceof Player && this.destiny !== undefined && keyPressed('space')) {
             world.travel(this.destiny.coords)
-            Object.keys(playerMap).forEach(key => {
-                playerMap[key]
+            Object.keys(world.playerMap).forEach(key => {
+                world.playerMap[key]
                     .setPosition(this.destiny.x, this.destiny.y + 100)
                     .tempInvulnerable(1000)
                     .travel(this.destiny.coords)
@@ -573,7 +507,7 @@ class Stairs extends RectBody {
 }
 
 
-class DiaBody extends RectBody {
+export class DiaBody extends RectBody {
     constructor(x, y, width, height, coords) {
         super(x, y, width, height, coords)
         this.color = 'yellow'
@@ -605,7 +539,7 @@ class DiaBody extends RectBody {
 }
 
 
-class Shield extends DiaBody {
+export class Shield extends DiaBody {
     constructor(body, width, height, ttl) {
         super(body.x, body.y, width, height, body.coords);
         this.color = 'green'
@@ -626,7 +560,7 @@ class Shield extends DiaBody {
     }
 }
 
-class Goal extends RectBody {
+export class Goal extends RectBody {
     constructor(coord) {
         super(WORLD_WIDTH / 2 - 25, WORLD_HEIGHT / 2 - 25, 50, 50, coord)
         this.color = 'white'

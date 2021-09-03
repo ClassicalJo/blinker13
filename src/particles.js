@@ -1,14 +1,14 @@
+import kontra from './kontra'
 let { Pool, randInt } = kontra
+import { drawCircle } from './images'
 
-let pool = Pool({
+export let pool = Pool({
     create: kontra.Sprite
 })
 
-
-
-let explosion = body => {
+export let explosion = body => {
     let m = body.width * body.height
-    for (let i = 0; i < randInt(m/500, m/100); i++) {
+    for (let i = 0; i < randInt(m / 500, m / 100); i++) {
         pool.get({
             x: body.x,
             y: body.y,
@@ -30,7 +30,7 @@ let explosion = body => {
 
 }
 
-let fire = body => {
+export let fire = body => {
     let speed = kontra.Vector(body.dx * -1, body.dy * -1).normalize()
     pool.get({
         x: body.x + speed.x * 15,
@@ -45,7 +45,7 @@ let fire = body => {
     })
 
 }
-let smoke = body => {
+export let smoke = body => {
     if (Math.abs(body.dx) < .2 && Math.abs(body.dy) < .2) return
     let speed = kontra.Vector(body.dx * -1, body.dy * -1).normalize()
     for (let i = 0; i < 3; i++) {
@@ -69,7 +69,7 @@ let smoke = body => {
     }
 }
 
-let absorb = body => {
+export let absorb = body => {
     let radiusEffect = 100
     let dest = kontra.Vector(body.x, body.y)
     let rand = kontra.Vector(kontra.randInt(-300, 300), randInt(-300, 300)).normalize().scale(radiusEffect)
@@ -98,7 +98,7 @@ let absorb = body => {
 
 }
 
-let exhale = body => {
+export let exhale = body => {
     let radiusEffect = 100
     let pos = kontra.Vector(body.x, body.y)
     let dest = kontra.Vector(kontra.randInt(-3, 3), randInt(-3, 3))
@@ -123,5 +123,4 @@ let exhale = body => {
             drawCircle(this.context, this.color, this.radius)
         }
     })
-
 }

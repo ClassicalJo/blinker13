@@ -1,12 +1,16 @@
+import kontra from './kontra'
+import { WORLD_WIDTH, WORLD_HEIGHT } from './init'
+import { world } from './index'
+
 function isSameCoord(coord1, coord2) {
     return coord1.x == coord2.x && coord1.y == coord2.y && coord1.z == coord2.z
 }
-let UI = {
+export let UI = {
     win: function () {
-        bindKeys('esc', () => { })
+        kontra.bindKeys('esc', () => { })
         Object.keys(UI.elements).forEach(key => UI.elements[key].show = false)
         UI.elements.victory.show = true
-        isPaused = true
+        world.isPaused = true
     },
     start: function () {
         this.elements = {

@@ -6141,3 +6141,4 @@ var kontra = (function () {
   return kontra;
 
 }());
+export default kontra

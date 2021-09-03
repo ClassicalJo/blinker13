@@ -1,38 +1,39 @@
+import kontra from './kontra.js'
+import { Quadrant, Depth, Coords } from './quadrants.js'
+import { Enemy, Stairs, DiaBody, Goal, Player, Link } from './sprites.js'
+import { screen, spaceGas } from './images.js'
+import { pool } from './particles.js'
+import { UI } from './ui.js'
+import { SAT } from './sat.js'
+import { playBGM } from './bgm.js'
+import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_X, WORLD_Y, WORLD_Z, WORLD_INITIAL_COORDS } from './init'
+
+const { init, initKeys, keyMap, bindKeys,randInt} = kontra
+const { canvas, context } = init()
 initKeys()
-const WORLD_X = 3
-const WORLD_Y = 3
-const WORLD_Z = 3
-const WORLD_WIDTH = document.querySelector('canvas').width
-const WORLD_HEIGHT = document.querySelector('canvas').height
-let worldLifetime = 0
-let isPaused = true
 let bgmInitialized = false
 
 keyMap['ControlLeft'] = 'ctrl'
 keyMap['ShiftLeft'] = 'shift'
 keyMap['Escape'] = 'esc'
 
-function getPointInCircle(vector, r, theta) {
-    return {
-        x: vector.x + r.x * Math.cos(theta),
-        y: vector.y + r.y * Math.sin(theta),
-    }
 
+export function isWorldPaused() {
+    return world.isPaused
 }
-
 bindKeys('ctrl', function () {
-    if (switcherooOnCooldown) return
-    switcherooOnCooldown = true
-    switcheroo()
-    setTimeout(() => switcherooOnCooldown = false, 500)
+    if (world.switcherooOnCooldown) return
+    world.switcherooOnCooldown = true
+    world.switcheroo()
+    setTimeout(() => world.switcherooOnCooldown = false, 500)
 })
 
 bindKeys('esc', () => {
     if (!bgmInitialized) {
         bgmInitialized = true
-        // playBGM('song')
+        playBGM('song')
     }
-    isPaused = !isPaused
+    world.isPaused = !world.isPaused
 })
 
 function getDirectionVector(body) {
@@ -63,16 +64,23 @@ class World extends kontra.Sprite.class {
         super();
         this.size = { x: WORLD_X, y: WORLD_Y, z: WORLD_Z }
         this.depths = this.createDepths(x, y, z)
-        this.currentCoords = new Coords(0, 0, 0)
+        this.currentCoords = new Coords(...WORLD_INITIAL_COORDS)
         this.currentQuadrant = this.getQuadrant(this.currentCoords)
         this.stairMap = {}
         this.width = WORLD_WIDTH
         this.height = WORLD_HEIGHT
         this.exploredMaps = new Set()
+        this.activeSprite = 'player'
         this.makeEnemies()
         this.makeStairs()
         this.makeGoal()
         this.travel(this.currentCoords)
+        this.player = new Player(400, 200, 'goldenrod', 'player', this.currentCoords)
+        this.shadow = new Player(375, 500, 'purple', 'shadow', this.currentCoords)
+        this.switcherooOnCooldown = false
+        this.playerMap = { shadow: this.shadow, player: this.player }
+        this.lifetime = 0
+        this.isPaused = true
     }
     makeGoal() {
         let randX = randInt(0, WORLD_X - 1)
@@ -157,7 +165,7 @@ class World extends kontra.Sprite.class {
         })
     }
     update() {
-        worldLifetime++
+        this.lifetime++
         let bodies = this.currentQuadrant.bodies
         for (let i = bodies.length - 1; i >= 0; i--) {
             for (let j = i - 1; j >= 0; j--) {
@@ -175,32 +183,39 @@ class World extends kontra.Sprite.class {
             else bodies[i].update()
         }
     }
+    toggleShadow(str) {
+        return str === 'player' ? 'shadow' : 'player'
+    }
+    switcheroo() {
+        let link = new Link(this.playerMap[this.activeSprite], this.playerMap[this.toggleShadow(this.activeSprite)])
+        link.add()
+        this.activeSprite = this.toggleShadow(this.activeSprite)
+        this.playerMap[this.activeSprite].tempInvulnerable(300)
+    }
 }
-
-
-let world = new World(3, 3, 3)
+export let world = new World(3, 3, 3)
+world.player.add()
+world.shadow.add()
 
 const loop = kontra.GameLoop({
     update: () => {
         background.update()
-        !isPaused && pool.update()
-        !isPaused && world.update()
-        isPaused && UI.update()
+        !isWorldPaused() && pool.update()
+        !isWorldPaused() && world.update()
+        isWorldPaused() && UI.update()
     },
     render: () => {
         background.render()
-        !isPaused && pool.render()
-        !isPaused && world.render()
-        isPaused && UI.render()
+        !isWorldPaused() && pool.render()
+        !isWorldPaused() && world.render()
+        isWorldPaused() && UI.render()
     },
 })
 
 
-const player = new Player(400, 200, 'goldenrod', 'player', world.currentCoords)
-const shadow = new Player(375, 500, 'purple', 'shadow', world.currentCoords)
 
-let playerMap = { shadow, player }
-let activeSprite = 'player'
+
+export let activeSprite = 'player'
 
 const background = kontra.Scene({
     id: 'background',
