@@ -74,8 +74,8 @@ class World extends Sprite.class {
         this.makeStairs()
         this.makeGoal()
         this.travel(this.currentCoords)
-        this.player = new Player(400, 200, 'goldenrod', 'player', this.currentCoords)
-        this.shadow = new Player(375, 500, 'purple', 'shadow', this.currentCoords)
+        this.player = new Player(400, 200, 'goldenrod', 'player', this.currentCoords, this)
+        this.shadow = new Player(375, 500, 'purple', 'shadow', this.currentCoords, this)
         this.switcherooOnCooldown = false
         this.playerMap = { shadow: this.shadow, player: this.player }
         this.lifetime = 0
@@ -99,12 +99,12 @@ class World extends Sprite.class {
             let quadrant1 = this.getQuadrant(new Coords(x1, y1, i))
             let quadrant2 = this.getQuadrant(new Coords(x2, y2, i))
             if (i !== 0) {
-                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant1.coords, "silver")
+                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant1.coords, "silver",this)
                 this.stairMap[i].up = stairs
                 quadrant1.add(stairs)
             }
             if (i !== this.depths.length - 1) {
-                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "brown")
+                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "brown",this)
                 this.stairMap[i].down = stairs
                 quadrant2.add(stairs)
             }
@@ -130,7 +130,8 @@ class World extends Sprite.class {
                         Math.random() * 900 + 50,
                         Math.random() * 450 + 50,
                         Math.random() * 40 + 10,
-                        key.coords
+                        key.coords,
+                        this
                     ))
                 }
             })
@@ -138,7 +139,7 @@ class World extends Sprite.class {
     }
     createDepths(x, y, z) {
         let arr = []
-        for (let i = 0; i < z; i++) arr.push(new Depth(x, y, i))
+        for (let i = 0; i < z; i++) arr.push(new Depth(x, y, i, this))
         return arr
     }
     add(coords, body) {
@@ -186,7 +187,7 @@ class World extends Sprite.class {
         return str === 'player' ? 'shadow' : 'player'
     }
     switcheroo() {
-        let link = new Link(this.playerMap[this.activeSprite], this.playerMap[this.toggleShadow(this.activeSprite)])
+        let link = new Link(this.playerMap[this.activeSprite], this.playerMap[this.toggleShadow(this.activeSprite)], this)
         link.add()
         this.activeSprite = this.toggleShadow(this.activeSprite)
         this.playerMap[this.activeSprite].tempInvulnerable(300)
@@ -227,7 +228,7 @@ const background = Scene({
     ]
 })
 
-let dia = new DiaBody(300, 300, 100, 300)
+let dia = new DiaBody(300, 300, 100, 300, new Coords(0,0,0), world)
 dia.add()
 
 

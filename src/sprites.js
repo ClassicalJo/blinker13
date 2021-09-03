@@ -1,6 +1,5 @@
 import { degToRad, keyPressed, init, randInt, Sprite, Vector } from "./kontra"
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_INITIAL_COORDS } from './init'
-import { world } from './index'
 import { drawBeziers, drawRamiel, drawRect, drawDia, drawPortal, drawCircle } from "./images"
 import { fire, explosion, absorb, exhale, smoke } from "./particles"
 import { UI } from "./ui"
@@ -53,7 +52,7 @@ export class Combo {
         else {
             this.body.setVelocity(leftRightSwitch(-move, move, 0), upDownSwitch(-move, move, 0))
         }
-        let sword = new Sword(swordOffset, this.body)
+        let sword = new Sword(swordOffset, this.body, this.body.container)
         sword.add()
         playSFX('lightsaber')
     }
@@ -68,7 +67,7 @@ export class Combo {
         else {
             body.setVelocity(leftRightSwitch(-move, move, 0), upDownSwitch(-move, move, 0))
         }
-        let shield = new Shield(body, body.width * 10, body.height * 1.5, frames)
+        let shield = new Shield(body, body.width * 10, body.height * 1.5, frames, body.container)
         shield.add()
     }
     start() {
@@ -83,8 +82,9 @@ export class Combo {
 }
 
 export class RectBody extends Sprite.class {
-    constructor(x, y, width, height, coords = { x: 0, y: 0, z: 0 }) {
+    constructor(x, y, width, height, coords = { x: 0, y: 0, z: 0 }, container) {
         super({ x, y, width, height });
+        this.container = container
         this.anchor = { x: 0.5, y: 0.5 };
         this.canCollide = true;
         this.timeouts = [];
@@ -132,7 +132,7 @@ export class RectBody extends Sprite.class {
         return
     }
     add() {
-        world.add(this.coords, this)
+        this.container.add(this.coords, this)
     }
     tempInvulnerable(time) {
         this.invulnerable = true
@@ -147,8 +147,8 @@ export class RectBody extends Sprite.class {
 }
 
 export class Player extends RectBody {
-    constructor(x, y, color, name, coords) {
-        super(x, y, 25, 25, coords);
+    constructor(x, y, color, name, coords, container) {
+        super(x, y, 25, 25, coords, container);
         this.moveSpeed = 0.25
         this.speedLimit = 5
         this.baseSpeed = 2
@@ -161,14 +161,11 @@ export class Player extends RectBody {
     }
     attack() {
         if (!this.combo || this.combo.finished) return
-        else {
-
-            this.combo.attack(this)
-        }
+        this.combo.attack(this)
     }
 
     canAttack = () => keyPressed('shift') && !this.attackCooldown && this.released
-    isActive = () => this.name === world.activeSprite
+    isActive = () => this.name === this.container.activeSprite
 
     shouldCancel = () => this.combo !== null && this.combo.canceled
     cancel() {
@@ -214,15 +211,15 @@ export class Player extends RectBody {
             let inverse = Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
-            world.switcheroo()
+            this.container.switcheroo()
         }
     }
 
     travel(coords) {
-        world.playerMap[world.toggleShadow(world.activeSprite)].setVelocity(0, 0)
-        world.getQuadrant(coords).remove(this)
+        this.container.playerMap[this.container.toggleShadow(this.container.activeSprite)].setVelocity(0, 0)
+        this.container.getQuadrant(coords).remove(this)
         this.coords = coords
-        world.getQuadrant(coords).add(this)
+        this.container.getQuadrant(coords).add(this)
     }
     update() {
         if (!this.isActive()) return
@@ -242,15 +239,15 @@ export class Player extends RectBody {
             [[0, 30], [[0, 35, -10, 40, -30, 50]], [25, 30]],
             [[30, 0], [[40, 0, 40, 25, 30, 25]], [30, 0]],
         ]
-        drawRect(this.context, this.invulnerable ? world.lifetime % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
+        drawRect(this.context, this.invulnerable ? this.container.lifetime % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
         drawBeziers(this.context, `rgba(255,255,255,1)`, shapes)
     }
 }
 
 
 export class Link extends RectBody {
-    constructor(origin, dest) {
-        super(origin.x, origin.y, 5, 5, origin.coords)
+    constructor(origin, dest, container) {
+        super(origin.x, origin.y, 5, 5, origin.coords, container)
         this.radius = 10;
         this.origin = origin
         this.destiny = dest
@@ -272,10 +269,10 @@ export class Link extends RectBody {
 
 
 export class Sword extends RectBody {
-    constructor(offset, body) {
+    constructor(offset, body, container) {
         let swingOffset = degToRad(135)
         let { x, y } = getPointInCircle(body, offset, body.rotation + swingOffset)
-        super(x, y, 100, 5, body.coords);
+        super(x, y, 100, 5, body.coords, container);
         this.ttl = 10
         this.label = 'sword'
         this.offset = offset
@@ -308,8 +305,8 @@ export class Sword extends RectBody {
 }
 
 export class Enemy extends RectBody {
-    constructor(x, y, maxHp, coords, speed = 2) {
-        super(x, y, 50, 50, coords);
+    constructor(x, y, maxHp, coords, container, speed = 2) {
+        super(x, y, 50, 50, coords, container);
         this.maxHp = maxHp
         this.hp = maxHp
         this.speed = 1
@@ -318,7 +315,7 @@ export class Enemy extends RectBody {
         this.speed = speed
     }
     draw() {
-        drawRamiel(this.context, this.invulnerable ? world.lifetime % 2 == 0 ? this.color : 'transparent' : this.color, this.width, this.height)
+        drawRamiel(this.context, this.invulnerable ? this.container.lifetime % 2 == 0 ? this.color : 'transparent' : this.color, this.width, this.height)
     }
     die() {
         explosion(this)
@@ -328,7 +325,7 @@ export class Enemy extends RectBody {
         if (!this.invulnerable && (body instanceof Sword || body instanceof Shield)) {
             this.tempInvulnerable(1000)
             let damage = body.damage()
-            new Damage(this, damage)
+            new Damage(this, damage, this.container)
             this.hp -= damage
             this.hp <= 0 && this.die()
         }
@@ -336,7 +333,7 @@ export class Enemy extends RectBody {
 
     move() {
         this.rotation += degToRad(1)
-        let theta = getTheta(this, world.playerMap[world.activeSprite])
+        let theta = getTheta(this, this.container.playerMap[this.container.activeSprite])
         this.setVelocity(Math.cos(theta) * this.speed, Math.sin(theta) * this.speed)
         this.advance()
     }
@@ -350,7 +347,7 @@ export class Enemy extends RectBody {
 
 
 export class Damage extends Sprite.class {
-    constructor(body, damage) {
+    constructor(body, damage, container) {
         super({
             center: body,
             x: body.x,
@@ -360,12 +357,13 @@ export class Damage extends Sprite.class {
             color: 'white',
             dx: randInt(-2, 2),
             dy: randInt(-5, -3) - 2,
-            ddy: 0.2
+            ddy: 0.2,
+            container,
         });
         this.add()
     }
     add() {
-        world.add(this.center.coords, this)
+        this.container.add(this.center.coords, this)
     }
     draw() {
         this.context.fillStyle = this.color
@@ -381,8 +379,8 @@ export class Damage extends Sprite.class {
 }
 
 export class Wall extends RectBody {
-    constructor(x, y, width, height, thickness, destiny) {
-        super(x, y, width, height);
+    constructor(x, y, width, height, thickness, destiny, container) {
+        super(x, y, width, height, { x: 0, y: 0, z: 0 }, container);
         this.thickness = thickness
         this.destiny = destiny
         this.enableTravel = true
@@ -397,7 +395,7 @@ export class Wall extends RectBody {
             let target = { x: body.x, y: body.y }
             let inverseSpeed = Vector(body.dx * -1, body.dy * -1)
             let min = 100
-            let max = { x: world.width - min, y: world.height - min }
+            let max = { x: WORLD_WIDTH - min, y: WORLD_HEIGHT - min }
             if (this.height > this.width) {
                 target.x = body.x > max.x ? min : max.x
                 body.x += inverseSpeed.x
@@ -407,11 +405,11 @@ export class Wall extends RectBody {
                 body.y += inverseSpeed.y
             }
             if (this.destiny && this.enableTravel) {
-                Object.keys(world.playerMap).forEach(key => {
-                    world.playerMap[key].setPosition(target.x, target.y)
-                    world.playerMap[key].travel(this.destiny)
+                Object.keys(this.container.playerMap).forEach(key => {
+                    this.container.playerMap[key].setPosition(target.x, target.y)
+                    this.container.playerMap[key].travel(this.destiny)
                 })
-                world.travel(this.destiny)
+                this.container.travel(this.destiny)
             }
         }
     }
@@ -419,8 +417,8 @@ export class Wall extends RectBody {
 
 
 export class Stairs extends RectBody {
-    constructor(x, y, coords, color) {
-        super(x, y, 55, 55, coords);
+    constructor(x, y, coords, color, container) {
+        super(x, y, 55, 55, coords, container);
         this.color = color
         this.label = 'stairs'
         this.shouldAbsorb = 0
@@ -434,9 +432,9 @@ export class Stairs extends RectBody {
     collide(body) {
         if (body instanceof Player) this.colliding = true
         if (body instanceof Player && this.destiny !== undefined && keyPressed('space')) {
-            world.travel(this.destiny.coords)
-            Object.keys(world.playerMap).forEach(key => {
-                world.playerMap[key]
+            this.container.travel(this.destiny.coords)
+            Object.keys(this.container.playerMap).forEach(key => {
+                this.container.playerMap[key]
                     .setPosition(this.destiny.x, this.destiny.y + 100)
                     .tempInvulnerable(1000)
                     .travel(this.destiny.coords)
@@ -469,8 +467,8 @@ export class Stairs extends RectBody {
 
 
 export class DiaBody extends RectBody {
-    constructor(x, y, width, height, coords) {
-        super(x, y, width, height, coords)
+    constructor(x, y, width, height, coords, container) {
+        super(x, y, width, height, coords, container)
         this.color = 'yellow'
         this.vertices = this.getVertices()
     }
@@ -501,8 +499,8 @@ export class DiaBody extends RectBody {
 
 
 export class Shield extends DiaBody {
-    constructor(body, width, height, ttl) {
-        super(body.x, body.y, width, height, body.coords);
+    constructor(body, width, height, ttl, container) {
+        super(body.x, body.y, width, height, body.coords, container);
         this.color = 'green'
         this.body = body
         this.opacity = 0.3
@@ -522,8 +520,8 @@ export class Shield extends DiaBody {
 }
 
 export class Goal extends RectBody {
-    constructor(coord) {
-        super(WORLD_WIDTH / 2 - 25, WORLD_HEIGHT / 2 - 25, 50, 50, coord)
+    constructor(coord, container) {
+        super(WORLD_WIDTH / 2 - 25, WORLD_HEIGHT / 2 - 25, 50, 50, coord, container)
         this.color = 'white'
     }
     update() {

@@ -11,12 +11,13 @@ export class Coords {
 
 
 export class Quadrant {
-    constructor(x, y, z) {
+    constructor(x, y, z, container) {
         this.coords = new Coords(x, y, z)
         this.bodies = []
         this.width = WORLD_WIDTH
         this.height = WORLD_HEIGHT
         this.thickness = 5
+        this.container = container
         this.frame = this.setFrame()
         this.frame.forEach(key => this.add(key))
     }
@@ -56,21 +57,21 @@ export class Quadrant {
         }
         let [up, left, down, right] = validDestiny(this.coords)
         return [
-            new Wall(w / 2, t / 2, w, t, t, up),
-            new Wall(t / 2, t + h / 2, t, h, t, left),
-            new Wall(w - t / 2, h / 2 + t, t, h, t, right),
-            new Wall(w / 2, h - t / 2, w, t, t, down),
+            new Wall(w / 2, t / 2, w, t, t, up, this.container),
+            new Wall(t / 2, t + h / 2, t, h, t, left, this.container),
+            new Wall(w - t / 2, h / 2 + t, t, h, t, right, this.container),
+            new Wall(w / 2, h - t / 2, w, t, t, down, this.container),
         ]
     }
 }
 
 export class Depth {
-    constructor(x, y, z) {
+    constructor(x, y, z, container) {
         this.quadrants = []
         for (let i = 0; i < x; i++) {
             let column = []
             for (let j = 0; j < y; j++) {
-                column.push(new Quadrant(i, j, z))
+                column.push(new Quadrant(i, j, z, container))
             }
             this.quadrants.push(column)
         }
