@@ -1,9 +1,9 @@
-import { init, initKeys, keyMap, bindKeys,randInt, Vector, Sprite, GameLoop, Scene} from './kontra'
+import { init, initKeys, keyMap, bindKeys, randInt, Vector, Sprite, GameLoop, Scene } from './kontra'
 import { Quadrant, Depth, Coords } from './quadrants.js'
 import { Enemy, Stairs, DiaBody, Goal, Player, Link } from './sprites.js'
 import { screen, spaceGas } from './images.js'
 import { pool } from './particles.js'
-import { UI } from './ui.js'
+import { initUI } from './ui.js'
 import { SAT } from './sat.js'
 import { playBGM } from './bgm.js'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_X, WORLD_Y, WORLD_Z, WORLD_INITIAL_COORDS } from './init'
@@ -35,28 +35,6 @@ bindKeys('esc', () => {
     world.isPaused = !world.isPaused
 })
 
-function getDirectionVector(body) {
-    let vector = Vector(body.dx, body.dy)
-    if (vector.x === 0 && vector.y === 0) return Vector(0, -1).normalize()
-    return vector.normalize()
-}
-
-function getDirection(body) {
-    let { x, y } = getDirectionVector(body)
-    let absX = Math.abs(x)
-    let absY = Math.abs(y)
-    let thresholdUnit = 0.35
-    let isMono = (Math.max(absX, absY) - Math.min(absX, absY)) > thresholdUnit
-    if (isMono) {
-        if (absX > absY) return x < 0 ? { x: -1, y: 0 } : { x: 1, y: 0 }
-        else return y < 0 ? { x: 0, y: -1 } : { x: 0, y: 1 }
-    }
-    else {
-        let a = x < 0 ? -1 : 1
-        let b = y < 0 ? -1 : 1
-        return Vector(a, b).normalize()
-    }
-}
 
 class World extends Sprite.class {
     constructor(x, y, z) {
@@ -81,10 +59,13 @@ class World extends Sprite.class {
         this.lifetime = 0
         this.isPaused = true
     }
+    victory() {
+        UI.win()
+    }
     makeGoal() {
         let randX = randInt(0, WORLD_X - 1)
         let randY = randInt(0, WORLD_Y - 1)
-        let goal = new Goal(new Coords(randX, randY, WORLD_Z - 1))
+        let goal = new Goal(new Coords(randX, randY, WORLD_Z - 1,), this)
         this.getQuadrant(new Coords(randX, randY, WORLD_Z - 1)).add(goal)
     }
     makeStairs() {
@@ -99,12 +80,12 @@ class World extends Sprite.class {
             let quadrant1 = this.getQuadrant(new Coords(x1, y1, i))
             let quadrant2 = this.getQuadrant(new Coords(x2, y2, i))
             if (i !== 0) {
-                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant1.coords, "silver",this)
+                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant1.coords, "silver", this)
                 this.stairMap[i].up = stairs
                 quadrant1.add(stairs)
             }
             if (i !== this.depths.length - 1) {
-                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "brown",this)
+                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "brown", this)
                 this.stairMap[i].down = stairs
                 quadrant2.add(stairs)
             }
@@ -193,7 +174,8 @@ class World extends Sprite.class {
         this.playerMap[this.activeSprite].tempInvulnerable(300)
     }
 }
-export let world = new World(3, 3, 3)
+let world = new World(3, 3, 3)
+let UI = initUI(world)
 world.player.add()
 world.shadow.add()
 
@@ -228,7 +210,7 @@ const background = Scene({
     ]
 })
 
-let dia = new DiaBody(300, 300, 100, 300, new Coords(0,0,0), world)
+let dia = new DiaBody(300, 300, 100, 300, new Coords(0, 0, 0), world)
 dia.add()
 
 

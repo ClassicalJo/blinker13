@@ -2,7 +2,6 @@ import { degToRad, keyPressed, init, randInt, Sprite, Vector } from "./kontra"
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_INITIAL_COORDS } from './init'
 import { drawBeziers, drawRamiel, drawRect, drawDia, drawPortal, drawCircle } from "./images"
 import { fire, explosion, absorb, exhale, smoke } from "./particles"
-import { UI } from "./ui"
 import { playBGM, playSFX } from "./bgm"
 import { getPointInCircle, distanceToTarget, noDirection, leftRightSwitch, upDownSwitch, getTheta, rotateVertex, } from "./helpers"
 const { canvas, context } = init()
@@ -529,7 +528,7 @@ export class Goal extends RectBody {
     }
     collide(body) {
         if (body instanceof Player) {
-            UI.win()
+            this.container.victory()
         }
     }
 }

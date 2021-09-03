@@ -1,7 +1,7 @@
 import { WORLD_HEIGHT, WORLD_WIDTH } from "./init";
 import { rotateVertex } from "./helpers";
 
-import {Sprite, degToRad} from "./kontra";
+import { Sprite, degToRad } from "./kontra";
 
 
 export function drawBeziers(ctx, color, shape) {
@@ -94,11 +94,12 @@ export function drawRamiel(ctx, color, w, h) {
     drawBeziers(ctx, color, shapes)
 }
 
-export function screen(color) {
+export function screen(color, opacity = 1) {
     return Sprite({
         width: WORLD_WIDTH,
         height: WORLD_HEIGHT,
         color: color,
+        opacity,
     })
 }
 
