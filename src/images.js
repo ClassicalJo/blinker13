@@ -1,6 +1,5 @@
 import { WORLD_HEIGHT, WORLD_WIDTH } from "./init";
 import { rotateVertex } from "./helpers";
-
 import { Sprite, degToRad } from "./kontra";
 
 

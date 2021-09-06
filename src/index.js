@@ -1,6 +1,6 @@
 import { init, initKeys, keyMap, bindKeys, randInt, Vector, Sprite, GameLoop } from './kontra'
 import { Quadrant, Depth, Coords } from './quadrants.js'
-import { Enemy, Stairs, DiaBody, Goal, Player, Link } from './sprites.js'
+import { Enemy, Stairs, DiaBody, Goal, Player, Link, GiantEnemy } from './sprites.js'
 import { screen, spaceGas } from './images.js'
 import { pool } from './particles.js'
 import { initUI } from './ui.js'
@@ -8,7 +8,7 @@ import { SAT } from './sat.js'
 import { playBGM } from './bgm.js'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_X, WORLD_Y, WORLD_Z, WORLD_INITIAL_COORDS } from './init'
 
-const { canvas, context } = init()
+
 initKeys()
 let bgmInitialized = false
 
@@ -39,7 +39,7 @@ bindKeys('esc', () => {
 class World extends Sprite.class {
     constructor(x, y, z) {
         super();
-        this.size = { x: WORLD_X, y: WORLD_Y, z: WORLD_Z }
+        this.size = { x, y, z }
         this.depths = this.createDepths(x, y, z)
         this.currentCoords = new Coords(...WORLD_INITIAL_COORDS)
         this.currentQuadrant = this.getQuadrant(this.currentCoords)
@@ -63,10 +63,10 @@ class World extends Sprite.class {
         UI.win()
     }
     makeGoal() {
-        let randX = randInt(0, WORLD_X - 1)
-        let randY = randInt(0, WORLD_Y - 1)
-        let goal = new Goal(new Coords(randX, randY, WORLD_Z - 1,), this)
-        this.getQuadrant(new Coords(randX, randY, WORLD_Z - 1)).add(goal)
+        let randX = randInt(0, this.size.x - 1)
+        let randY = randInt(0, this.size.y - 1)
+        let goal = new Goal(new Coords(randX, randY, this.size.z - 1,), this)
+        this.getQuadrant(new Coords(randX, randY, this.size.z - 1)).add(goal)
     }
     makeStairs() {
         function getTwoRandInts(min, max) {
@@ -174,7 +174,7 @@ class World extends Sprite.class {
         this.playerMap[this.activeSprite].tempInvulnerable(300)
     }
 }
-let world = new World(3, 3, 3)
+let world = new World(WORLD_X, WORLD_Y, WORLD_Z)
 let UI = initUI(world)
 world.player.add()
 world.shadow.add()
@@ -213,7 +213,8 @@ const background = Sprite({
 let dia = new DiaBody(300, 300, 100, 300, new Coords(0, 0, 0), world)
 dia.add()
 
-
+let bossu = new GiantEnemy(new Coords(0, 0, 0), world)
+bossu.add()
 UI.start()
 loop.start()
 

@@ -519,6 +519,59 @@ export class Shield extends DiaBody {
     }
 }
 
+export class GiantEnemy extends Enemy {
+    constructor(coords, container) {
+        super(300, 300, 200, coords, container)
+        this.width = 20
+        this.height = 20
+        this.hp = 100
+        this.maxHp = 100
+        this.color = 'red'
+        this.speed = 1
+        this.minions = Array(4).fill('').map((key, index) => new Orbiter(this.x, this.y, 50, Math.PI / 2 * index, this))
+        this.minions.forEach(key => key.add())
+        this.lifetime = 0
+        this.newOrbiterAngle = Math.PI / 8
+    }
+    update() {
+        this.lifetime++
+        if (this.lifetime % 500 == 0) {
+            let orbiter = new Orbiter(this.x, this.y, 50, this.newOrbiterAngle, this)
+            this.newOrbiterAngle += Math.PI / 2
+            orbiter.add()
+        }
+        this.move()
+        this.vertices = this.getVertices()
+
+    }
+    draw() {
+        drawRect(this.context, this.color, this.width, this.height)
+    }
+    die() {
+        explosion(this)
+        this.remove()
+    }
+}
+
+class Orbiter extends Enemy {
+    constructor(x, y, hp, angle, enemy) {
+        super(x, y, hp, enemy.coords, enemy.container);
+        this.theta = enemy.rotation + angle
+        this.x = enemy.x + 100 * Math.cos(this.theta)
+        this.y = enemy.y + 100 * Math.sin(this.theta)
+        this.enemy = enemy
+        this.angle = angle
+    }
+    update() {
+        if (this.enemy.hp <= 0) this.die()
+        this.rotation += degToRad(-1)
+        this.x = this.enemy.x + 100 * Math.cos(this.theta)
+        this.y = this.enemy.y + 100 * Math.sin(this.theta)
+        this.advance()
+        this.vertices = this.getVertices()
+    }
+}
+
 export class Goal extends RectBody {
     constructor(coord, container) {
         super(WORLD_WIDTH / 2 - 25, WORLD_HEIGHT / 2 - 25, 50, 50, coord, container)
