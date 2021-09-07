@@ -1,6 +1,7 @@
 import { bindKeys, Sprite, unbindKeys, init, randInt } from './kontra'
 import { WORLD_WIDTH, WORLD_HEIGHT } from './init'
-import { drawBeziers, screen } from './images'
+import { drawBeziers, screen, strokeBeziers } from './images'
+import { leftRightSwitch } from './helpers'
 const { canvas, context } = init()
 
 function isSameCoord(coord1, coord2) {
@@ -36,10 +37,18 @@ export let initUI = container => ({
                 show: true,
                 sprite: frame(),
             },
+            mapArrowLeft: {
+                show: true,
+                sprite: rArrow(WORLD_WIDTH / 2 - container.size.x * 75 / 2 - 50, container.size.y * 75 / 2 + 100, -100, 100)
+            },
+            mapArrowRight: {
+                show: true,
+                sprite: rArrow(WORLD_WIDTH / 2 + container.size.x * 75 / 2 + 20, container.size.y * 75 / 2 + 100, 100, 100)
+            },
             mapGrid: {
                 show: true,
                 sprite: Sprite({
-                    x: WORLD_WIDTH/2 - container.size.x *75/2,
+                    x: WORLD_WIDTH / 2 - container.size.x * 75 / 2,
                     y: 200,
                     opacity: 0.5,
                     lifetime: 0,
@@ -64,7 +73,6 @@ export let initUI = container => ({
                         this.context.lineWidth = 5
                         this.context.strokeStyle = this.transparent ? 'transparent' : 'white'
                         this.context.rect(-gap / 2, -gap / 2, container.size.x * 50 + (container.size.x - 1) * gap + gap, container.size.y * 50 + (container.size.y - 1) * gap + gap)
-
                         this.context.stroke()
                         for (let y = 1; y < container.size.y; y++) {
                             this.context.beginPath()
@@ -90,12 +98,10 @@ export let initUI = container => ({
             map: {
                 show: true,
                 sprite: Sprite({
-                    x: WORLD_WIDTH/2 - container.size.x *75/2,
+                    x: WORLD_WIDTH / 2 - container.size.x * 75 / 2,
                     y: 200,
                     render: function () {
                         let { up, down } = container.stairMap[container.currentCoords.z]
-
-
                         for (let coord of container.exploredMaps) {
                             if (coord.z === container.currentCoords.z) {
                                 let gap = 25
@@ -197,7 +203,6 @@ let holopad = () => {
 let frame = () => {
     let [w, h, l, m, n] = [WORLD_WIDTH, WORLD_HEIGHT, 100, 200, 400]
     let color = 'black'
-    let border = [[0, 0], [w, 0], [w, h], [0, h], [0, 0]]
     let shapes = [
         [
             [0, 0],
@@ -223,4 +228,47 @@ let frame = () => {
         }
     })
 
+}
+let rArrow = (x, y, width, height) => {
+    let [w, h, l] = [width, height, height / 4]
+    let shapes = [
+        [
+            [w / 2, 0],
+            [
+                [w / 2, h / 2 - l, w / 2, h / 2 - l, w / 2, h / 2 - l],
+                [0, h / 2 - l, 0, h / 2 - l, 0, h / 2 - l],
+                [0, h / 2 + l, 0, h / 2 + l, 0, h / 2 + l],
+                [w / 2, h / 2 + l, w / 2, h / 2 + l, w / 2, h / 2 + l],
+                [w / 2, h, w / 2, h, w / 2, h],
+                [w, h / 2, w, h / 2, w, h / 2],
+            ],
+            [w / 2, 0],
+        ]
+    ]
+    return Sprite({
+        width,
+        x,
+        y,
+        color: 'white',
+        flash: false,
+        opacity: 0.5,
+        update: function () {
+            this.flash = this.width < 0 ? leftRightSwitch(true, false, false) : leftRightSwitch(false, true, false)
+        },
+        render: function () {
+            this.context.lineWidth = 5
+            this.context.setLineDash([5, 5])
+            strokeBeziers(this.context, this.transparent ? 'transparent' : this.color, shapes)
+            if (this.flash) drawBeziers(this.context, this.color, shapes)
+        }
+    })
+}
+
+let depth = (x,y, container) => {
+    return Sprite({
+        currentDepth: container.currentCoords.z,
+        render: function(){
+            this.context.textFill(`Current Depth ${this.currentDepth}`)
+        }
+    })
 }

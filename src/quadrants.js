@@ -9,7 +9,6 @@ export class Coords {
     }
 }
 
-
 export class Quadrant {
     constructor(x, y, z, container) {
         this.coords = new Coords(x, y, z)

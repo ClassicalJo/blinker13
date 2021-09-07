@@ -14,6 +14,17 @@ export function drawBeziers(ctx, color, shape) {
     ctx.fill();
 }
 
+export function strokeBeziers(ctx, color, shape) {
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    for (let i in shape) {
+        ctx.moveTo(...shape[i][0])
+        shape[i][1].forEach(key => ctx.bezierCurveTo(...key))
+        ctx.lineTo(...shape[i][2])
+    }
+    ctx.stroke();
+}
+
 export function drawCircle(ctx, color, radius) {
     ctx.fillStyle = color;
     ctx.beginPath();

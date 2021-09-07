@@ -547,10 +547,6 @@ export class GiantEnemy extends Enemy {
     draw() {
         drawRect(this.context, this.color, this.width, this.height)
     }
-    die() {
-        explosion(this)
-        this.remove()
-    }
 }
 
 class Orbiter extends Enemy {
