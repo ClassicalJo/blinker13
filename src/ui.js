@@ -58,6 +58,13 @@ export let initUI = container => ({
                         }
                     },
                     render: function () {
+                        function dashedLineTo(x, y, color, ctx) {
+                            ctx.setLineDash([5, 5])
+                            ctx.lineWidth = 5
+                            ctx.strokeStyle = color
+                            ctx.lineTo(x, y)
+                            ctx.stroke()
+                        }
                         let gap = 25
                         this.context.beginPath()
                         this.context.moveTo(-gap / 2, -gap / 2)
@@ -69,21 +76,29 @@ export let initUI = container => ({
                         for (let y = 1; y < container.size.y; y++) {
                             this.context.beginPath()
                             this.context.moveTo(-gap / 2, 50 * y + gap * y - gap / 2)
-                            this.context.setLineDash([5, 5])
-                            this.context.lineWidth = 5
-                            this.context.strokeStyle = this.transparent ? 'transparent' : 'white'
-                            this.context.lineTo(container.size.x * 50 + (container.size.x - 1) * gap + gap / 2, 50 * y + gap * y - gap / 2)
-                            this.context.stroke()
+                            dashedLineTo(container.size.x * 50 + (container.size.x - 1) * gap + gap / 2, 50 * y + gap * y - gap / 2, this.transparent ? 'transparent' : 'white', this.context)
                         }
                         for (let x = 1; x < container.size.x; x++) {
                             this.context.beginPath()
                             this.context.moveTo(50 * x + gap * x - gap / 2, -gap / 2)
-                            this.context.setLineDash([5, 5])
-                            this.context.lineWidth = 5
-                            this.context.strokeStyle = this.transparent ? 'transparent' : 'white'
-                            this.context.lineTo(50 * x + gap * x - gap / 2, container.size.y * 50 + (container.size.y - 1) * gap + gap / 2)
-                            this.context.stroke()
+                            dashedLineTo(50 * x + gap * x - gap / 2, container.size.y * 50 + (container.size.y - 1) * gap + gap / 2, this.transparent ? 'transparent' : 'white', this.context)
                         }
+                    }
+                })
+            },
+            depth: {
+                show: true,
+                sprite: Sprite({
+                    x: WORLD_WIDTH / 2,
+                    y: WORLD_HEIGHT/2+ container.size.y * 75 / 2,
+                    opacity: 0.5,
+                    render: function () {
+                        this.context.font = '50px Arial Black'
+                        this.context.setLineDash([5, 1])
+                        this.context.lineWidth = 5
+                        this.context.strokeStyle = 'white'
+                        this.context.textAlign = 'center'
+                        this.context.strokeText(`DEPTH ${container.currentCoords.z}`,0,0)
                     }
                 })
             },
@@ -220,3 +235,4 @@ let frame = () => {
         }
     })
 }
+

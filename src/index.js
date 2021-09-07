@@ -199,6 +199,16 @@ const loop = GameLoop({
 
 export let activeSprite = 'player'
 
+let filter = screen('blue', 0.25)
+filter.update = function() {
+    switch(world.currentCoords.z){
+        case 1: return this.color = 'blue'
+        case 2: return this.color = 'purple'
+        case 3: return this.color = 'red'
+        default: return this.color = 'transparent'
+    }
+}
+
 const background = Sprite({
     id: 'background',
     children: [
@@ -207,8 +217,10 @@ const background = Sprite({
         spaceGas(-200, 500, -2.5, 'darkblue'),
         spaceGas(-1000, 800, -2, 'gray'),
         spaceGas(0, 0, -.5, 'purple'),
+        filter
     ]
 })
+
 
 let dia = new DiaBody(300, 300, 100, 300, new Coords(0, 0, 0), world)
 dia.add()
