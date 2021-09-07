@@ -37,14 +37,6 @@ export let initUI = container => ({
                 show: true,
                 sprite: frame(),
             },
-            mapArrowLeft: {
-                show: true,
-                sprite: rArrow(WORLD_WIDTH / 2 - container.size.x * 75 / 2 - 50, container.size.y * 75 / 2 + 100, -100, 100)
-            },
-            mapArrowRight: {
-                show: true,
-                sprite: rArrow(WORLD_WIDTH / 2 + container.size.x * 75 / 2 + 20, container.size.y * 75 / 2 + 100, 100, 100)
-            },
             mapGrid: {
                 show: true,
                 sprite: Sprite({
@@ -225,50 +217,6 @@ let frame = () => {
     return Sprite({
         render: function () {
             drawBeziers(this.context, color, shapes)
-        }
-    })
-
-}
-let rArrow = (x, y, width, height) => {
-    let [w, h, l] = [width, height, height / 4]
-    let shapes = [
-        [
-            [w / 2, 0],
-            [
-                [w / 2, h / 2 - l, w / 2, h / 2 - l, w / 2, h / 2 - l],
-                [0, h / 2 - l, 0, h / 2 - l, 0, h / 2 - l],
-                [0, h / 2 + l, 0, h / 2 + l, 0, h / 2 + l],
-                [w / 2, h / 2 + l, w / 2, h / 2 + l, w / 2, h / 2 + l],
-                [w / 2, h, w / 2, h, w / 2, h],
-                [w, h / 2, w, h / 2, w, h / 2],
-            ],
-            [w / 2, 0],
-        ]
-    ]
-    return Sprite({
-        width,
-        x,
-        y,
-        color: 'white',
-        flash: false,
-        opacity: 0.5,
-        update: function () {
-            this.flash = this.width < 0 ? leftRightSwitch(true, false, false) : leftRightSwitch(false, true, false)
-        },
-        render: function () {
-            this.context.lineWidth = 5
-            this.context.setLineDash([5, 5])
-            strokeBeziers(this.context, this.transparent ? 'transparent' : this.color, shapes)
-            if (this.flash) drawBeziers(this.context, this.color, shapes)
-        }
-    })
-}
-
-let depth = (x,y, container) => {
-    return Sprite({
-        currentDepth: container.currentCoords.z,
-        render: function(){
-            this.context.textFill(`Current Depth ${this.currentDepth}`)
         }
     })
 }
