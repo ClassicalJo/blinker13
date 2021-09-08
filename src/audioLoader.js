@@ -1,5 +1,5 @@
-import { CPlayer } from "./audio";
-import { song, lightsaber } from "./sfx";
+import { CPlayer } from "./cPlayer";
+import { lightsaber, battle } from "./sfx";
 
 var cPlayer = new CPlayer();
 class Sound {
@@ -18,7 +18,7 @@ class Sound {
         this.audio.src = this.src
         this.audio.play()
     }
-    playBGM(){
+    playBGM() {
         this.audio.src = this.src
         this.audio.loop = true
         this.audio.play()
@@ -27,7 +27,7 @@ class Sound {
 let sfxMap = {}
 let bgmMap = {}
 let sfx = { lightsaber }
-let bgm = { song }
+let bgm = { battle }
 
 Object.keys(sfx).forEach(key => sfxMap[key] = new Sound(sfx[key]))
 Object.keys(bgm).forEach(key => bgmMap[key] = new Sound(bgm[key]))

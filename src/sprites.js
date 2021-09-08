@@ -2,7 +2,7 @@ import { degToRad, keyPressed, init, randInt, Sprite, Vector } from "./kontra"
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_INITIAL_COORDS } from './init'
 import { drawBeziers, drawRamiel, drawRect, drawDia, drawPortal, drawCircle } from "./images"
 import { fire, explosion, absorb, exhale, smoke } from "./particles"
-import { playBGM, playSFX } from "./bgm"
+import { playBGM, playSFX } from "./audioLoader"
 import { getDirectionVector, getPointInCircle, distanceToTarget, noDirection, leftRightSwitch, upDownSwitch, getTheta, rotateVertex, } from "./helpers"
 const { canvas, context } = init()
 

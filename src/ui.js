@@ -1,7 +1,7 @@
 import { Sprite, unbindKeys, bindKeys, init, randInt } from './kontra'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_CENTER_HEIGHT, WORLD_CENTER_WIDTH } from './init'
 import { drawBeziers, drawCircle, drawDashedLine, drawDashedText, drawRect, screen, } from './images'
-const { canvas, context } = init()
+const { context } = init()
 
 const MAP_TILE_WIDTH = 50
 const MAP_TILE_HEIGHT = 50
@@ -308,7 +308,7 @@ let loseScreen = () => {
                 opacity: 0,
                 color: 'red',
                 update: function () {
-                    if (this.opacity < 0.5) this.opacity += 0.0015
+                    if (this.opacity < 0.5) this.opacity += 0.001
                     else this.showText = true
                 },
                 render: function () {

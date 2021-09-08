@@ -64,7 +64,8 @@ export var lightsaber = {
 // use it in a demo.
 
 // Song data
-export var song = {
+
+export var battle = {
   songData: [
     { // Instrument 0
       i: [
@@ -99,11 +100,11 @@ export var song = {
         6 // FX_DELAY_TIME
       ],
       // Patterns
-      p: [8, 8, 3, 6, 9, 9, 7, 10, 3, 6],
+      p: [8, 8, 3, 6, 9, 9, 7, 10, 3, 6, 1, 8],
       // Columns
       c: [
         {
-          n: [131, 138, 143, 147, 155, 159, 155, 147, 129, 138, 143, 147, 155, 159, 155, 147, 127, 131, 134, 138, 145, 143, 138, 141, 124, 127, 131, 145, 138, 133, 129, 131],
+          n: [131, , 138, , 146, , 155, , 146, , 134, , 129, , 138, , 146, , 155, , 146, , 134, , 127, , 134, , 143, , 151, , 143, , 131, , 122],
           f: []
         },
         {
@@ -341,7 +342,7 @@ export var song = {
         0 // FX_DELAY_TIME
       ],
       // Patterns
-      p: [12, 12, 12, 12, 14, 14, 14, 14, 12, 12],
+      p: [12, 12, 12, 12, 14, 14, 14, 14, 12, 12, 12, 12],
       // Columns
       c: [
         {
@@ -402,9 +403,107 @@ export var song = {
         }
       ]
     },
+    { // Instrument 4
+      i: [
+        0, // OSC1_WAVEFORM
+        125, // OSC1_VOL
+        104, // OSC1_SEMI
+        0, // OSC1_XENV
+        0, // OSC2_WAVEFORM
+        95, // OSC2_VOL
+        128, // OSC2_SEMI
+        12, // OSC2_DETUNE
+        0, // OSC2_XENV
+        0, // NOISE_VOL
+        12, // ENV_ATTACK
+        0, // ENV_SUSTAIN
+        72, // ENV_RELEASE
+        0, // ENV_EXP_DECAY
+        0, // ARP_CHORD
+        0, // ARP_SPEED
+        0, // LFO_WAVEFORM
+        0, // LFO_AMT
+        0, // LFO_FREQ
+        0, // LFO_FX_FREQ
+        2, // FX_FILTER
+        255, // FX_FREQ
+        0, // FX_RESONANCE
+        0, // FX_DIST
+        32, // FX_DRIVE
+        83, // FX_PAN_AMT
+        3, // FX_PAN_FREQ
+        130, // FX_DELAY_AMT
+        4 // FX_DELAY_TIME
+      ],
+      // Patterns
+      p: [11, 11, 11, 14, 15, 15, 14, 14, 11, 11, 11, 11],
+      // Columns
+      c: [
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [131, , , , 131, , , , 131, , , , 133, , , , 133, , , , 133, , , , 138, , , , 138, , , , 138, , , , 136, , , , 136, , , , 136],
+          f: [1]
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [],
+          f: []
+        },
+        {
+          n: [131, , 131, , 131, , 131, , 131, , 131, , 129, , 129, , 129, , 129, , 129, , 129, , 138, , 138, , 138, , 138, , 138, , 138, , 129, , 129, , 129, 131, 133, 134, 133, , 129],
+          f: [1]
+        },
+        {
+          n: [131, , 133, , 134, , 136, , 138, , 136, , 129, , 133, , 134, , 136, , 138, , 136, , 127, , 131, , 133, , 134, , 136, , 134, , 126, , 131, , 134, , 133, , 131, , 131],
+          f: [1]
+        }
+      ]
+    },
   ],
   rowLen: 7350,   // In sample lengths
   patternLen: 48,  // Rows per pattern
-  endPattern: 9,  // End pattern
-  numChannels: 4  // Number of channels
+  endPattern: 11,  // End pattern
+  numChannels: 5  // Number of channels
 };

@@ -5,7 +5,7 @@ import { screen, spaceGas } from './images.js'
 import { pool } from './particles.js'
 import { initUI } from './ui.js'
 import { SAT } from './sat.js'
-import { playBGM } from './bgm.js'
+import { playBGM } from './audioLoader.js'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_X, WORLD_Y, WORLD_Z, WORLD_INITIAL_COORDS } from './init'
 
 
@@ -21,6 +21,7 @@ export function isWorldPaused() {
 }
 bindKeys('enter', function () {
     UI.countdown()
+    playBGM('battle')
 })
 
 bindKeys('ctrl', function () {
@@ -213,11 +214,6 @@ const loop = GameLoop({
         isWorldPaused() && UI.render()
     },
 })
-
-
-
-
-export let activeSprite = 'player'
 
 let filter = screen('blue', 0.25)
 filter.update = function () {
