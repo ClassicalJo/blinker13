@@ -212,11 +212,24 @@ export class Player extends RectBody {
             let inverse = Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
-            if(!this.container.getRegen()) this.container.lose()
-            this.container.switcheroo()
+            if (this.container.getRegen()) this.container.lose()
+            else {
+                this.container.switcheroo()
+                this.regenerate()
+            }
         }
     }
-
+    regenerate() {
+        this.regen = true
+        let regenTime = 100
+        let timestamp = this.container.lifetime
+        let interval = setInterval(() => {
+            if (this.container.lifetime > timestamp + regenTime) {
+                this.regen = false
+                clearInterval(interval)
+            }
+        }, 100)
+    }
     travel(coords) {
         this.container.playerMap[this.container.toggleShadow(this.container.activeSprite)].setVelocity(0, 0)
         this.container.getQuadrant(coords).remove(this)
@@ -242,7 +255,7 @@ export class Player extends RectBody {
             [[30, 0], [[40, 0, 40, 25, 30, 25]], [30, 0]],
         ]
         drawRect(this.context, this.invulnerable ? this.container.lifetime % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
-        drawBeziers(this.context, `rgba(255,255,255,1)`, shapes)
+        !this.regen && drawBeziers(this.context, `rgba(255,255,255,1)`, shapes)
     }
 }
 

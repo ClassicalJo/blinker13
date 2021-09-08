@@ -56,7 +56,7 @@ class World extends Sprite.class {
         this.isPaused = true
     }
     getRegen(){
-        return this.playerMap['player'].regen || this.playerMap['shadow'].regen
+        return (this.playerMap['player'].regen || this.playerMap['shadow'].regen)
     }
     victory() {
         UI.win()
@@ -170,6 +170,7 @@ class World extends Sprite.class {
         return str === 'player' ? 'shadow' : 'player'
     }
     switcheroo() {
+        if(this.getRegen()) return
         let link = new Link(this.playerMap[this.activeSprite], this.playerMap[this.toggleShadow(this.activeSprite)], this)
         link.add()
         this.activeSprite = this.toggleShadow(this.activeSprite)
@@ -223,12 +224,6 @@ const background = Sprite({
     ]
 })
 
-
-let dia = new DiaBody(300, 300, 100, 300, new Coords(0, 0, 0), world)
-dia.add()
-
-let bossu = new GiantEnemy(new Coords(0, 0, 0), world)
-bossu.add()
 loop.start()
 
 
