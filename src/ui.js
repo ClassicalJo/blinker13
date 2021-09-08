@@ -11,6 +11,8 @@ const MAP_TILE_HALF_GAP = MAP_TILE_GAP / 2
 function isSameCoord(coord1, coord2) {
     return coord1.x == coord2.x && coord1.y == coord2.y && coord1.z == coord2.z
 }
+
+
 export let initUI = container => ({
     disableAll() {
         Object.keys(this.elements).forEach(key => this.toggle(key, false))
@@ -24,6 +26,11 @@ export let initUI = container => ({
         this.disableAll()
         this.toggle('lose', true)
         container.isPaused = true
+        bindKeys('enter', () => {
+            unbindKeys('enter')
+            container.restart()
+            this.start()
+        })
     },
     win: function () {
         unbindKeys('esc')
@@ -33,10 +40,8 @@ export let initUI = container => ({
     },
     countdown: function () {
         unbindKeys('enter')
-
         this.toggle('title')
         this.toggle('subtitle')
-        console.log(this.elements.black.sprite)
         setTimeout(() => this.elements.black.sprite.isStarting = true, 500)
         setTimeout(() => this.start(), 2500)
     },
@@ -308,7 +313,8 @@ let loseScreen = () => {
                 },
                 render: function () {
                     drawRect(this.context, this.color, this.width, this.height)
-                }})],
+                }
+            })],
         render: function () {
             this.children[0].showText && drawDashedText(this.context, this.color, 'FATAL ERROR', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT)
             this.children[0].showText && drawDashedText(this.context, this.color, 'PRESS ENTER TO TRY AGAIN.', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT + 200)

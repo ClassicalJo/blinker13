@@ -19,7 +19,7 @@ keyMap['Enter'] = 'enter'
 export function isWorldPaused() {
     return world.isPaused
 }
-bindKeys('enter', function(){
+bindKeys('enter', function () {
     UI.countdown()
 })
 
@@ -44,8 +44,8 @@ class World extends Sprite.class {
         this.height = WORLD_HEIGHT
         this.exploredMaps = new Set()
         this.activeSprite = 'player'
-        this.makeEnemies()
         this.makeStairs()
+        this.makeEnemies()
         this.makeGoal()
         this.travel(this.currentCoords)
         this.player = new Player(400, 200, 'goldenrod', 'player', this.currentCoords, this)
@@ -54,8 +54,9 @@ class World extends Sprite.class {
         this.playerMap = { shadow: this.shadow, player: this.player }
         this.lifetime = 0
         this.isPaused = true
+
     }
-    getRegen(){
+    getRegen() {
         return (this.playerMap['player'].regen || this.playerMap['shadow'].regen)
     }
     victory() {
@@ -63,6 +64,22 @@ class World extends Sprite.class {
     }
     lose() {
         UI.lose()
+    }
+    restart() {
+        let stairs = this.stairMap[this.currentCoords.z].up
+        let coords = stairs == undefined ? new Coords(0, 0, 0) : stairs.coords
+        let position = stairs == undefined ? { x: 400, y: 200 } : { x: stairs.x, y: stairs.y + 100 }
+        for (let sprite in this.playerMap) {
+            this.playerMap[sprite].travel(coords)
+            this.playerMap[sprite].setPosition(position.x, position.y)
+            this.playerMap[sprite].setVelocity(0, 0)
+            this.playerMap[sprite].regen = false
+        }
+        this.travel(coords)
+
+    }
+    save() {
+        this.savedWorld = { ...this, isPaused: true }
     }
     makeGoal() {
         let randX = randInt(0, this.size.x - 1)
@@ -170,7 +187,7 @@ class World extends Sprite.class {
         return str === 'player' ? 'shadow' : 'player'
     }
     switcheroo() {
-        if(this.getRegen()) return
+        if (this.getRegen()) return
         let link = new Link(this.playerMap[this.activeSprite], this.playerMap[this.toggleShadow(this.activeSprite)], this)
         link.add()
         this.activeSprite = this.toggleShadow(this.activeSprite)
@@ -203,8 +220,8 @@ const loop = GameLoop({
 export let activeSprite = 'player'
 
 let filter = screen('blue', 0.25)
-filter.update = function() {
-    switch(world.currentCoords.z){
+filter.update = function () {
+    switch (world.currentCoords.z) {
         case 1: return this.color = 'blue'
         case 2: return this.color = 'purple'
         case 3: return this.color = 'red'
