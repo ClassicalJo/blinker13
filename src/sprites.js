@@ -158,6 +158,7 @@ export class Player extends RectBody {
         this.color = color
         this.name = name
         this.label = 'player'
+        this.regen = false
     }
     attack() {
         if (!this.combo || this.combo.finished) return
@@ -211,6 +212,7 @@ export class Player extends RectBody {
             let inverse = Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
+            if(!this.container.getRegen()) this.container.lose()
             this.container.switcheroo()
         }
     }
@@ -528,7 +530,7 @@ export class GiantEnemy extends Enemy {
         this.maxHp = 100
         this.color = 'red'
         this.speed = 1
-        this.minions = Array(4).fill('').map((key, index) => new Orbiter(this.x, this.y, 50, Math.PI / 2 * index, this))
+        this.minions = Array(16).fill('').map((key, index) => new Orbiter(this.x, this.y, 50, Math.PI / 8 * index, this))
         this.minions.forEach(key => key.add())
         this.lifetime = 0
         this.newOrbiterAngle = Math.PI / 8
@@ -582,3 +584,4 @@ export class Goal extends RectBody {
         }
     }
 }
+

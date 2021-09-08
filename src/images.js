@@ -2,6 +2,23 @@ import { WORLD_HEIGHT, WORLD_WIDTH } from "./init";
 import { rotateVertex } from "./helpers";
 import { Sprite, degToRad } from "./kontra";
 
+export function drawDashedText(ctx, color, text, offsetX = 0, offsetY = 0) {
+    ctx.font = '50px Arial Black'
+    ctx.setLineDash([15, 3])
+    ctx.lineWidth = 5
+    ctx.strokeStyle = color
+    ctx.textAlign = 'center'
+    ctx.strokeText(text, offsetX, offsetY)
+}
+export function drawDashedLine(ctx, color, x1, y1, x2, y2) {
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.setLineDash([5, 5])
+    ctx.lineWidth = 5
+    ctx.strokeStyle = color
+    ctx.lineTo(x2, y2)
+    ctx.stroke()
+}
 
 export function drawBeziers(ctx, color, shape) {
     ctx.fillStyle = color;
@@ -25,18 +42,19 @@ export function strokeBeziers(ctx, color, shape) {
     ctx.stroke();
 }
 
-export function drawCircle(ctx, color, radius) {
+export function drawCircle(ctx, color, radius, offsetX = 0, offsetY = 0) {
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+    ctx.arc(offsetX, offsetY, radius, 0, 2 * Math.PI);
     ctx.fill();
 }
 
-export function drawRect(ctx, color, width, height) {
+export function drawRect(ctx, color, width, height, offsetX = 0, offsetY = 0, stroke = false, fill = true) {
     ctx.beginPath()
-    ctx.rect(0, 0, width, height)
+    ctx.rect(offsetX, offsetY, width, height)
     ctx.fillStyle = color
-    ctx.fill()
+    fill && ctx.fill()
+    stroke && ctx.stroke()
 }
 
 export function drawDia(ctx, color, width, height) {

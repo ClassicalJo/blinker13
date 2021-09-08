@@ -10,16 +10,19 @@ import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_X, WORLD_Y, WORLD_Z, WORLD_INITIAL_COO
 
 
 initKeys()
-let bgmInitialized = false
 
 keyMap['ControlLeft'] = 'ctrl'
 keyMap['ShiftLeft'] = 'shift'
 keyMap['Escape'] = 'esc'
-
+keyMap['Enter'] = 'enter'
 
 export function isWorldPaused() {
     return world.isPaused
 }
+bindKeys('enter', function(){
+    UI.countdown()
+})
+
 bindKeys('ctrl', function () {
     if (world.switcherooOnCooldown) return
     world.switcherooOnCooldown = true
@@ -27,13 +30,6 @@ bindKeys('ctrl', function () {
     setTimeout(() => world.switcherooOnCooldown = false, 500)
 })
 
-bindKeys('esc', () => {
-    if (!bgmInitialized) {
-        bgmInitialized = true
-        playBGM('song')
-    }
-    world.isPaused = !world.isPaused
-})
 
 
 class World extends Sprite.class {
@@ -59,8 +55,14 @@ class World extends Sprite.class {
         this.lifetime = 0
         this.isPaused = true
     }
+    getRegen(){
+        return this.playerMap['player'].regen || this.playerMap['shadow'].regen
+    }
     victory() {
         UI.win()
+    }
+    lose() {
+        UI.lose()
     }
     makeGoal() {
         let randX = randInt(0, this.size.x - 1)
@@ -227,7 +229,6 @@ dia.add()
 
 let bossu = new GiantEnemy(new Coords(0, 0, 0), world)
 bossu.add()
-UI.start()
 loop.start()
 
 

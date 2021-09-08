@@ -1,4 +1,4 @@
-import {Pool, randInt, Sprite, Vector} from './kontra'
+import { Pool, randInt, Sprite, Vector } from './kontra'
 import { drawCircle } from './images'
 
 export let pool = Pool({
