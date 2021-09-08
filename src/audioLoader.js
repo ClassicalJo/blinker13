@@ -1,27 +1,39 @@
 import { CPlayer } from "./cPlayer";
 import { lightsaber, battle } from "./sfx";
 
-var cPlayer = new CPlayer();
 class Sound {
     constructor(song) {
-        cPlayer.init(song)
-        this.ready = cPlayer.generate()
-        this.wave = cPlayer.createWave()
-        this.audio = document.createElement('audio')
-        this.src = URL.createObjectURL(new Blob([this.wave], { type: 'audio/wav' }))
+        this.player = new CPlayer()
+        this.player.init(song)
+        this.ready = false
+        this.promise = new Promise(res => {
+            let done = false
+            let interval = setInterval(() => {
+                if (done) {
+                    res(true)
+                    clearInterval(interval)
+                    return
+                }
+                done = this.player.generate() >= 1
+                if (done) {
+                    this.wave = this.player.createWave()
+                    this.audio = document.createElement('audio')
+                    this.audio.src = URL.createObjectURL(new Blob([this.wave], { type: 'audio/wav' }))
+                }
+            }, 0)
+        }).then(() => this.ready = true)
     }
     stop() {
         this.audio.pause()
     }
     play() {
         this.audio.pause()
-        this.audio.src = this.src
         this.audio.play()
     }
     playBGM() {
-        this.audio.src = this.src
-        this.audio.loop = true
-        this.audio.play()
+        if(this.ready) {
+            this.audio.volume = 0.5
+            this.audio.play()}
     }
 }
 let sfxMap = {}
@@ -32,24 +44,9 @@ let bgm = { battle }
 Object.keys(sfx).forEach(key => sfxMap[key] = new Sound(sfx[key]))
 Object.keys(bgm).forEach(key => bgmMap[key] = new Sound(bgm[key]))
 
-function filterSounds(map) {
-    let ready = Object.keys(map)
-        .map(key => map[key].ready)
-        .filter(key => key >= 1)
-    return !(ready.length > 1)
-}
-
-function checkReady() {
-    let sfxReady = filterSounds(sfxMap)
-    let bgmReady = filterSounds(bgmMap)
-    if (!sfxReady && !bgmReady) checkReady()
-}
-
 export function playSFX(sfx) {
     sfxMap[sfx].play()
 }
 export function playBGM(music) {
     bgmMap[music].playBGM()
 }
-
-checkReady()
