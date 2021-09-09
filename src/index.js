@@ -17,7 +17,7 @@ audioReady.then(() => {
 
 initKeys()
 
-function bindAllKeys(){
+function bindAllKeys() {
     keyMap['ControlLeft'] = 'ctrl'
     keyMap['ShiftLeft'] = 'shift'
     keyMap['Escape'] = 'esc'
@@ -27,7 +27,7 @@ function bindAllKeys(){
         UI.countdown()
         playBGM('travel')
     })
-    
+
     bindKeys('ctrl', function () {
         if (world.switcherooOnCooldown) return
         world.switcherooOnCooldown = true
@@ -80,7 +80,7 @@ class World extends Sprite.class {
         let stairs = this.stairMap[this.currentCoords.z].up
         let coords = stairs == undefined ? new Coords(0, 0, 0) : stairs.coords
         let position = stairs == undefined ? { x: 400, y: 200 } : { x: stairs.x, y: stairs.y + 100 }
-        Object.values(this.playerMap).forEach(key => {
+        this.getPlayers().forEach(key => {
             key.travel(coords)
             key.setPosition(position.x, position.y)
             key.canMove = true
@@ -116,6 +116,7 @@ class World extends Sprite.class {
                 let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "brown", this)
                 this.stairMap[i].down = stairs
                 quadrant2.add(stairs)
+                quadrant2.close()
             }
         }
         for (let depth = 0; depth < Object.keys(this.stairMap).length; depth++) {
@@ -161,22 +162,26 @@ class World extends Sprite.class {
     getCurrentQuadrant() {
         return this.getQuadrant(this.currentCoords)
     }
+    getPlayers() {
+        return Object.values(this.playerMap)
+    }
     travel(coords) {
         pool.clear()
         this.currentQuadrant.clear()
         this.currentCoords = coords
         this.exploredMaps.add(coords)
         this.currentQuadrant = this.getQuadrant(coords)
-        this.checkBoss() && console.log('BOSSFIGHT')
+        this.checkBoss() && this.bossFight()
     }
     checkBoss() {
         return isSameCoord(this.currentCoords, this.stairMap[this.currentCoords.z].down.coords)
     }
     bossFight() {
-        //CERRAR LAS PUERTAS
-        //ACTIVAR LA MUSICA
+        playBGM('battle')
     }
     bossWin() {
+        playBGM('travel')
+        this.currentQuadrant.open()
         //ACTIVAR LAS PUERTAS Y EL PORTAL
         //CAMBIAR LA MUSICA
     }
