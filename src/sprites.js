@@ -464,7 +464,6 @@ export class Stairs extends RectBody {
     collide(body) {
         if (body instanceof Player) {
             this.colliding = true
-            this.container.bossWin()
         }
         if (body instanceof Player && this.destiny !== undefined && keyPressed('space') && this.enableTravel) {
             this.container.travel(this.destiny.coords)
@@ -571,17 +570,21 @@ export class GiantEnemy extends Enemy {
     }
     update() {
         this.lifetime++
-        if (this.lifetime % 500 == 0) {
+        if (this.lifetime % 250 == 0) {
             let orbiter = new Orbiter(this.x, this.y, 50, this.newOrbiterAngle, this)
             this.newOrbiterAngle += Math.PI / 2
             orbiter.add()
         }
         this.move()
         this.vertices = this.getVertices()
-
     }
     draw() {
         drawRect(this.context, this.color, this.width, this.height)
+    }
+    die() {
+        explosion(this)
+        this.container.bossWin()
+        this.remove()
     }
 }
 

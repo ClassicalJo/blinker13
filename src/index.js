@@ -57,6 +57,7 @@ class World extends Sprite.class {
         this.activeSprite = 'player'
         this.makeStairs()
         this.makeEnemies()
+        this.makeBosses()
         this.makeGoal()
         this.travel(this.currentCoords)
         this.player = new Player(400, 200, 'goldenrod', 'player', this.currentCoords, this)
@@ -77,90 +78,79 @@ class World extends Sprite.class {
     }
     restart() {
         let stairs = this.stairMap[this.currentCoords.z].up
-        let coords = stairs == undefined ? new Coords(0, 0, 0) : stairs.coords
-        let position = stairs == undefined ? { x: 400, y: 200 } : { x: stairs.x, y: stairs.y + 100 }
         this.getPlayers().forEach(key => {
-            key.travel(coords)
-            key.setPosition(position.x, position.y)
+            key.travel(stairs.coords)
+            key.setPosition(stairs.x, stairs.y)
             key.canMove = true
             key.regen = false
             key.opacity = 1
         })
-        this.travel(coords)
+        this.travel(stairs.coords)
     }
 
     makeGoal() {
-        let randX = randInt(0, this.size.x - 1)
-        let randY = randInt(0, this.size.y - 1)
-        let goal = new Goal(new Coords(randX, randY, this.size.z - 1,), this)
-        this.getQuadrant(new Coords(randX, randY, this.size.z - 1)).add(goal)
+        let { coords } = this.stairMap[this.size.z - 1].down
+        let goal = new Goal(coords, this)
+        this.getQuadrant(coords).add(goal)
     }
     makeStairs() {
-        function getTwoRandInts(min, max) {
-            return [randInt(min, max), randInt(min, max)]
-        }
         let offset = 100
         for (let i = 0; i < this.depths.length; i++) {
-            this.stairMap[i] = {}
-            let [x1, x2] = getTwoRandInts(0, this.size.x - 1)
-            let [y1, y2] = getTwoRandInts(0, this.size.y - 1)
-            if (i == 0 && x2 == 0 && y2 == 0) {
-                x2 = this.size.x - 1
-                y2 = this.size.y - 1
-            }
-            if (x1 == x2 && y1 == y2) {
-                [x1, y1] = [0, 0]
-                [x2, y2] = [this.size.x - 1, this.size.y - 1]
-            }
-            let quadrant1 = this.getQuadrant(new Coords(x1, y1, i))
-            let quadrant2 = this.getQuadrant(new Coords(x2, y2, i))
-            if (i !== 0) {
-                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant1.coords, "silver", this)
-                stairs.enableTravel = true
-                this.stairMap[i].up = stairs
-                quadrant1.add(stairs)
-            }
-            if (i !== this.depths.length - 1) {
-                let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "brown", this)
-                this.stairMap[i].down = stairs
-                stairs.opacity = 0.1
-                quadrant2.add(stairs)
-                quadrant2.close()
-            }
+            let mapCoordinates = Array(this.size.x)
+                .fill('')
+                .map((key, index) => index)
+                .map((x, index) => Array(this.size.y).fill('').map((key, y) => [x, y]))
+                .flat()
+
+            let [x1, y1] = mapCoordinates.splice(randInt(0, mapCoordinates.length - 1), 1).flat()
+            let [x2, y2] = mapCoordinates.splice(randInt(0, mapCoordinates.length - 1), 1).flat()
+            if (i == 0) [x1, y1] = [0, 0]
+
+            let upQuadrant = this.getQuadrant(new Coords(x1, y1, i))
+            let downQuadrant = this.getQuadrant(new Coords(x2, y2, i))
+            let upStairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), upQuadrant.coords, "silver", this)
+            let downStairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), downQuadrant.coords, "brown", this)
+
+            upStairs.enableTravel = true
+            downStairs.opacity = 0
+            downQuadrant.close()
+
+            i !== 0 && upQuadrant.add(upStairs)
+            i < this.size.z - 1 && downQuadrant.add(downStairs)
+
+            this.stairMap[i] = { up: upStairs, down: downStairs }
         }
         for (let depth = 0; depth < Object.keys(this.stairMap).length; depth++) {
-            if (depth !== 0) {
-                this.stairMap[depth].up.addDestiny(this.stairMap[depth - 1].down)
-            }
-            if (depth !== this.depths.length - 1) {
-                this.stairMap[depth].down.addDestiny(this.stairMap[depth + 1].up)
-            }
-
+            depth !== 0 && this.stairMap[depth].up.addDestiny(this.stairMap[depth - 1].down)
+            depth !== this.size.z - 1 && this.stairMap[depth].down.addDestiny(this.stairMap[depth + 1].up)
         }
     }
     makeEnemies() {
+        let offset = 100
         this.depths
             .map(key => key.quadrants)
             .flat()
             .flat()
             .forEach(key => {
-
                 let { up, down } = this.stairMap[key.coords.z]
-                if (up == undefined) up = { coords: new Coords(-1, -1, -1) }
-                if (down == undefined) down = { coords: new Coords(-1, -1, -1) }
                 if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
                     isSameCoord(key.coords, up.coords) ||
                     isSameCoord(key.coords, down.coords)) return
                 key.add(new Enemy(
-                    Math.random() * 900 + 50,
-                    Math.random() * 450 + 50,
-                    Math.random() * 40 + 10,
+                    randInt(offset, WORLD_WIDTH - offset),
+                    randInt(offset, WORLD_HEIGHT - offset),
+                    randInt(25, 50),
                     key.coords,
                     this
                 ))
-
             })
-
+    }
+    makeBosses() {
+        for (let i = 0; i < this.size.z - 1; i++) {
+            let { coords } = this.stairMap[i].down
+            let boss = new GiantEnemy(coords, this)
+            boss.add()
+        }
     }
     createDepths(x, y, z) {
         let arr = []
@@ -189,10 +179,8 @@ class World extends Sprite.class {
         this.checkBoss() && this.bossFight()
     }
     checkBoss() {
-        let {up, down} = this.stairMap[this.currentCoords.z]
-        if (up == undefined) up = {coords: new Coords(0,0,0)}
-        if (down == undefined) down = {coords: new Coords(0,0,0)}
-        return isSameCoord(this.currentCoords, down.coords) && !this.currentQuadrant.cleared
+        console.log(this.stairMap)
+        return isSameCoord(this.currentCoords, this.stairMap[this.currentCoords.z].down.coords) && !this.currentQuadrant.cleared
     }
     bossFight() {
         changeBGM('battle')
@@ -200,10 +188,9 @@ class World extends Sprite.class {
     bossWin() {
         changeBGM('travel')
         this.currentQuadrant.open()
+        this.stairMap[this.currentCoords.z].down.opacity = 1
         this.stairMap[this.currentCoords.z].down.enableTravel = true
         this.currentQuadrant.cleared = true
-        //ACTIVAR LAS PUERTAS Y EL PORTAL
-        //CAMBIAR LA MUSICA
     }
     render() {
         this.currentQuadrant.bodies.forEach(key => {
