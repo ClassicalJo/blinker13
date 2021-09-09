@@ -1,6 +1,6 @@
-import { init, initKeys, keyMap, bindKeys, randInt, Vector, Sprite, GameLoop } from './kontra'
+import { init, initKeys, keyMap, bindKeys, unbindKeys, randInt, Vector, Sprite, GameLoop } from './kontra'
 import { Quadrant, Depth, Coords } from './quadrants.js'
-import { Enemy, Stairs, DiaBody, Goal, Player, Link, GiantEnemy } from './sprites.js'
+import { Enemy, Stairs, DiaBody, Goal, Player, Link, GiantEnemy, Asteroid, FinalBoss } from './sprites.js'
 import { screen, spaceGas } from './images.js'
 import { pool } from './particles.js'
 import { initUI } from './ui.js'
@@ -36,6 +36,11 @@ function bindAllKeys() {
     })
 }
 
+function unbindAll() {
+    let keys = ['ctrl', 'shift', 'esc', 'enter', 'left', 'up', 'down', 'right']
+    unbindKeys(keys)
+}
+
 function isWorldPaused() {
     return world.isPaused
 }
@@ -56,8 +61,8 @@ class World extends Sprite.class {
         this.exploredMaps = new Set()
         this.activeSprite = 'player'
         this.makeStairs()
-        this.makeEnemies()
-        this.makeBosses()
+        // this.makeEnemies()
+        // this.makeBosses()
         this.makeGoal()
         this.travel(this.currentCoords)
         this.player = new Player(400, 200, 'goldenrod', 'player', this.currentCoords, this)
@@ -71,6 +76,12 @@ class World extends Sprite.class {
         return (this.playerMap['player'].regen || this.playerMap['shadow'].regen)
     }
     victory() {
+        unbindAll()
+        this.getPlayers().forEach(key => key.canMove = false)
+        this.currentQuadrant.goal.animate()
+
+    }
+    showVictory() {
         UI.win()
     }
     lose() {
@@ -91,7 +102,9 @@ class World extends Sprite.class {
     makeGoal() {
         let { coords } = this.stairMap[this.size.z - 1].down
         let goal = new Goal(coords, this)
-        this.getQuadrant(coords).add(goal)
+        this.getQuadrant(coords).goal = goal
+        let finalBoss = new FinalBoss(coords, this)
+        this.getQuadrant(coords).add(finalBoss)
     }
     makeStairs() {
         let offset = 100
@@ -127,23 +140,44 @@ class World extends Sprite.class {
     }
     makeEnemies() {
         let offset = 100
-        this.depths
-            .map(key => key.quadrants)
-            .flat()
-            .flat()
-            .forEach(key => {
-                let { up, down } = this.stairMap[key.coords.z]
-                if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
-                    isSameCoord(key.coords, up.coords) ||
-                    isSameCoord(key.coords, down.coords)) return
-                key.add(new Enemy(
-                    randInt(offset, WORLD_WIDTH - offset),
-                    randInt(offset, WORLD_HEIGHT - offset),
-                    randInt(25, 50),
-                    key.coords,
-                    this
-                ))
-            })
+        for (let i = 0; i < randInt(0, 4); i++) {
+            this.depths
+                .map(key => key.quadrants)
+                .flat()
+                .flat()
+                .forEach(key => {
+                    let { up, down } = this.stairMap[key.coords.z]
+                    if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
+                        isSameCoord(key.coords, up.coords) ||
+                        isSameCoord(key.coords, down.coords)) return
+                    key.add(new Enemy(
+                        randInt(offset, WORLD_WIDTH - offset),
+                        randInt(offset, WORLD_HEIGHT - offset),
+                        randInt(25, 50),
+                        key.coords,
+                        this
+                    ))
+                })
+        }
+        for (let i = 0; i < randInt(0, 10); i++) {
+            this.depths
+                .map(key => key.quadrants)
+                .flat()
+                .flat()
+                .forEach(key => {
+                    let { up, down } = this.stairMap[key.coords.z]
+                    if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
+                        isSameCoord(key.coords, up.coords) ||
+                        isSameCoord(key.coords, down.coords)) return
+                    key.add(new Asteroid(
+                        randInt(offset, WORLD_WIDTH - offset),
+                        randInt(offset, WORLD_HEIGHT - offset),
+                        randInt(25, 50),
+                        key.coords,
+                        this
+                    ))
+                })
+        }
     }
     makeBosses() {
         for (let i = 0; i < this.size.z - 1; i++) {
@@ -179,7 +213,6 @@ class World extends Sprite.class {
         this.checkBoss() && this.bossFight()
     }
     checkBoss() {
-        console.log(this.stairMap)
         return isSameCoord(this.currentCoords, this.stairMap[this.currentCoords.z].down.coords) && !this.currentQuadrant.cleared
     }
     bossFight() {
@@ -191,6 +224,10 @@ class World extends Sprite.class {
         this.stairMap[this.currentCoords.z].down.opacity = 1
         this.stairMap[this.currentCoords.z].down.enableTravel = true
         this.currentQuadrant.cleared = true
+    }
+    showGoal() {
+        changeBGM('travel')
+        this.currentQuadrant.add(this.currentQuadrant.goal)
     }
     render() {
         this.currentQuadrant.bodies.forEach(key => {

@@ -92,7 +92,7 @@ export let initUI = container => ({
         },
         victory: {
             show: false,
-            sprite: screen('blue', 0.5)
+            sprite: winScreen()
         },
         lose: {
             show: false,
@@ -291,3 +291,12 @@ let loseScreen = () => Sprite({
     ],
 })
 
+let winScreen = () => Sprite({
+    children: [
+        screen('darkgrey'),
+        holopad('blue'),
+        text('WELCOME BACK', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT, 50),
+        text('THANKS FOR KEEPING ME ALIVE', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT + 200, 30),
+        frame(),
+    ]
+})

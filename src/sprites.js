@@ -611,10 +611,36 @@ export class Goal extends RectBody {
     constructor(coord, container) {
         super(WORLD_CENTER_WIDTH - 25, WORLD_CENTER_HEIGHT - 25, 50, 50, coord, container)
         this.color = 'white'
+        this.shouldAnimate = false
+        this.rotation = degToRad(1)
+        this.rotate = 0
+        this.scaling = 1
+        this.grow = true
 
     }
+    animate() {
+        this.shouldAnimate = true
+    }
+    draw() {
+        drawRect(this.context, this.color, this.width, this.height)
+    }
     update() {
-        this.rotation += degToRad(1)
+        this.rotation += degToRad(this.rotate)
+        this.scaleX = this.scaling
+        this.scaleY = this.scaling
+        if (this.shouldAnimate) {
+            this.rotate += degToRad(1)
+            this.scaling += this.grow ? 0.1 : -0.2
+        }
+        if (this.scaleX > 50) {
+            this.container.getPlayers().forEach(key => key.remove())
+            this.grow = false
+        }
+        if (this.scaleX < 1) {
+        
+            this.remove()
+            setTimeout(() => this.container.showVictory(), 1000)
+        }
 
     }
     collide(body) {
@@ -624,3 +650,35 @@ export class Goal extends RectBody {
     }
 }
 
+export class Asteroid extends Enemy {
+    constructor(x, y, size = randInt(10, 70), coords, container) {
+        super(x, y, size, coords, container, 0);
+        this.width = size
+        this.height = size
+        this.color = 'grey'
+    }
+    draw() {
+        drawRect(this.context, this.color, this.width, this.height)
+    }
+    update() {
+        this.rotation += degToRad(0.5)
+        this.getVertices()
+    }
+}
+
+export class FinalBoss extends Enemy {
+    constructor(coords, container) {
+        super(WORLD_CENTER_WIDTH - 50, WORLD_CENTER_HEIGHT - 50, 50, coords, container);
+        this.width = 100
+        this.height = 100
+        this.color = 'pink'
+    }
+    draw() {
+        drawRect(this.context, this.color, this.width, this.height)
+    }
+    die() {
+        explosion(this)
+        this.container.showGoal()
+        this.remove()
+    }
+}

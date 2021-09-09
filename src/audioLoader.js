@@ -49,6 +49,7 @@ class Sound {
             this.audio.volume -= 0.025
             if (this.audio.volume < 0.1) {
                 this.audio.pause()
+                this.audio.currentTime = 0
                 clearInterval(this.interval)
             }
         }, 100)
