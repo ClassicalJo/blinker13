@@ -1,8 +1,9 @@
 import { Sprite, unbindKeys, bindKeys, init, randInt } from './kontra'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_CENTER_HEIGHT, WORLD_CENTER_WIDTH } from './init'
 import { drawBeziers, drawCircle, drawDashedLine, drawDashedText, drawRect, screen, } from './images'
-const { context } = init()
+import { audioReady } from './audioLoader'
 
+const { context } = init()
 const MAP_TILE_WIDTH = 50
 const MAP_TILE_HEIGHT = 50
 const MAP_TILE_GAP = 25
@@ -53,7 +54,7 @@ export let initUI = container => ({
             container.isPaused = !container.isPaused
         })
     },
-    elements: {
+    elements: {        
         black: {
             show: true,
             sprite: function () {
@@ -181,7 +182,11 @@ export let initUI = container => ({
                     }
                 }
             })
-        }
+        },
+        loading: {
+            show: !audioReady,
+            sprite: screen('black')
+        },
     },
     render: function () {
         Object.keys(this.elements).forEach(key => {

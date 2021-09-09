@@ -31,9 +31,11 @@ class Sound {
         this.audio.play()
     }
     playBGM() {
-        if(this.ready) {
+        if (this.ready) {
+            this.audio.loop = true
             this.audio.volume = 0.5
-            this.audio.play()}
+            this.audio.play()
+        }
     }
 }
 let sfxMap = {}
@@ -44,9 +46,18 @@ let bgm = { battle }
 Object.keys(sfx).forEach(key => sfxMap[key] = new Sound(sfx[key]))
 Object.keys(bgm).forEach(key => bgmMap[key] = new Sound(bgm[key]))
 
+let promises = [
+    Object.keys(sfxMap).map(key => sfxMap[key].ready),
+    Object.keys(bgmMap).map(key => bgmMap[key].ready)
+]
 export function playSFX(sfx) {
     sfxMap[sfx].play()
 }
 export function playBGM(music) {
     bgmMap[music].playBGM()
 }
+
+export let audioReady = Promise.all([promises]).then(() => {
+    console.log('audio ready!')
+    return true
+})

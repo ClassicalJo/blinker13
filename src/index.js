@@ -16,7 +16,7 @@ keyMap['ShiftLeft'] = 'shift'
 keyMap['Escape'] = 'esc'
 keyMap['Enter'] = 'enter'
 
-export function isWorldPaused() {
+function isWorldPaused() {
     return world.isPaused
 }
 bindKeys('enter', function () {
