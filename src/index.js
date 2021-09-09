@@ -65,7 +65,6 @@ class World extends Sprite.class {
         this.playerMap = { shadow: this.shadow, player: this.player }
         this.lifetime = 0
         this.isPaused = true
-
     }
     getRegen() {
         return (this.playerMap['player'].regen || this.playerMap['shadow'].regen)
@@ -105,16 +104,26 @@ class World extends Sprite.class {
             this.stairMap[i] = {}
             let [x1, x2] = getTwoRandInts(0, this.size.x - 1)
             let [y1, y2] = getTwoRandInts(0, this.size.y - 1)
+            if (i == 0 && x2 == 0 && y2 == 0) {
+                x2 = this.size.x - 1
+                y2 = this.size.y - 1
+            }
+            if (x1 == x2 && y1 == y2) {
+                [x1, y1] = [0, 0]
+                [x2, y2] = [this.size.x - 1, this.size.y - 1]
+            }
             let quadrant1 = this.getQuadrant(new Coords(x1, y1, i))
             let quadrant2 = this.getQuadrant(new Coords(x2, y2, i))
             if (i !== 0) {
                 let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant1.coords, "silver", this)
+                stairs.enableTravel = true
                 this.stairMap[i].up = stairs
                 quadrant1.add(stairs)
             }
             if (i !== this.depths.length - 1) {
                 let stairs = new Stairs(randInt(offset, this.width - offset), randInt(offset, this.height - offset), quadrant2.coords, "brown", this)
                 this.stairMap[i].down = stairs
+                stairs.opacity = 0.1
                 quadrant2.add(stairs)
                 quadrant2.close()
             }
@@ -135,15 +144,21 @@ class World extends Sprite.class {
             .flat()
             .flat()
             .forEach(key => {
-                if (Math.random() > 0.4) {
-                    key.add(new Enemy(
-                        Math.random() * 900 + 50,
-                        Math.random() * 450 + 50,
-                        Math.random() * 40 + 10,
-                        key.coords,
-                        this
-                    ))
-                }
+
+                let { up, down } = this.stairMap[key.coords.z]
+                if (up == undefined) up = { coords: new Coords(-1, -1, -1) }
+                if (down == undefined) down = { coords: new Coords(-1, -1, -1) }
+                if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
+                    isSameCoord(key.coords, up.coords) ||
+                    isSameCoord(key.coords, down.coords)) return
+                key.add(new Enemy(
+                    Math.random() * 900 + 50,
+                    Math.random() * 450 + 50,
+                    Math.random() * 40 + 10,
+                    key.coords,
+                    this
+                ))
+
             })
 
     }
@@ -174,14 +189,19 @@ class World extends Sprite.class {
         this.checkBoss() && this.bossFight()
     }
     checkBoss() {
-        return isSameCoord(this.currentCoords, this.stairMap[this.currentCoords.z].down.coords)
+        let {up, down} = this.stairMap[this.currentCoords.z]
+        if (up == undefined) up = {coords: new Coords(0,0,0)}
+        if (down == undefined) down = {coords: new Coords(0,0,0)}
+        return isSameCoord(this.currentCoords, down.coords) && !this.currentQuadrant.cleared
     }
     bossFight() {
-        playBGM('battle')
+        changeBGM('battle')
     }
     bossWin() {
-        playBGM('travel')
+        changeBGM('travel')
         this.currentQuadrant.open()
+        this.stairMap[this.currentCoords.z].down.enableTravel = true
+        this.currentQuadrant.cleared = true
         //ACTIVAR LAS PUERTAS Y EL PORTAL
         //CAMBIAR LA MUSICA
     }

@@ -19,6 +19,7 @@ export class Quadrant {
         this.container = container
         this.frame = this.setFrame()
         this.frame.forEach(key => this.add(key))
+        this.cleared = false
     }
     close() {
         this.frame.forEach(key => key.enableTravel = false)

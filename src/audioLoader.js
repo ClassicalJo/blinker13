@@ -5,7 +5,7 @@ class Sound {
     constructor(song) {
         this.player = new CPlayer()
         this.player.init(song)
-        this.ready = false
+        this.interval = null
         this.promise = new Promise(res => {
             let done = false
             let interval = setInterval(() => {
@@ -22,7 +22,7 @@ class Sound {
                     this.audio.src = URL.createObjectURL(new Blob([this.wave], { type: 'audio/wav' }))
                 }
             }, 0)
-        }).then(() => this.ready = true)
+        })
     }
     stop() {
         this.audio.pause()
@@ -33,23 +33,23 @@ class Sound {
         this.audio.play()
     }
     playBGM() {
-        if (this.ready) {
-            this.audio.loop = true
-            let interval = setInterval(() => {
-                this.audio.volume += 0.05
-                if (this.audio.volume > 0.5) {
-                    clearInterval(interval)
-                }
-            }, 100)
-            this.audio.play()
-        }
+        this.audio.loop = true
+        clearInterval(this.interval)
+        this.interval = setInterval(() => {
+            this.audio.volume += 0.05
+            if (this.audio.volume > 0.5) {
+                clearInterval(this.interval)
+            }
+        }, 100)
+        this.audio.play()
     }
     stopBGM() {
-        let interval = setInterval(() => {
-            this.audio.volume -= 0.05
+        clearInterval(this.interval)
+        this.interval = setInterval(() => {
+            this.audio.volume -= 0.025
             if (this.audio.volume < 0.1) {
                 this.audio.pause()
-                clearInterval(interval)
+                clearInterval(this.interval)
             }
         }, 100)
     }

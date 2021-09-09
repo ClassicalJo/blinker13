@@ -211,7 +211,7 @@ export class Player extends RectBody {
         if (!this.canCollide || this.invulnerable || !this.isActive() || !this.canMove) return
         if (body instanceof Enemy) {
             let players = this.container.getPlayers()
-            players.getPlayers().forEach(key => key.tempInvulnerable(1000))
+            players.forEach(key => key.tempInvulnerable(1000))
             let inverse = Vector(this.dx * -1, this.dy * -1).normalize()
             this.setVelocity(inverse.x * this.width || 0, inverse.y * this.height || -this.height)
             if (this.container.getRegen()) {
@@ -456,13 +456,17 @@ export class Stairs extends RectBody {
         this.enlarge = true
         this.scale = Math.random() * 1.1
         this.enableTravel = false
+        this.container = container
     }
     addDestiny(coords) {
         this.destiny = coords
     }
     collide(body) {
-        if (body instanceof Player) this.colliding = true
-        if (body instanceof Player && this.destiny !== undefined && keyPressed('space')) {
+        if (body instanceof Player) {
+            this.colliding = true
+            this.container.bossWin()
+        }
+        if (body instanceof Player && this.destiny !== undefined && keyPressed('space') && this.enableTravel) {
             this.container.travel(this.destiny.coords)
             Object.values(this.container.playerMap).forEach(key => {
                 key
@@ -473,6 +477,7 @@ export class Stairs extends RectBody {
         }
     }
     update() {
+        if (this.enableTravel) this.opacity += 0.001
         this.shouldAbsorb++
         this.scaleX += this.enlarge ? .001 : -.001
         this.scaleY += this.enlarge ? .001 : -.001
