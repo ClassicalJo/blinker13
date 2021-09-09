@@ -1,5 +1,5 @@
 import { CPlayer } from "./cPlayer";
-import { lightsaber, battle } from "./sfx";
+import { lightsaber, battle, travel } from "./sfx";
 
 class Sound {
     constructor(song) {
@@ -41,7 +41,7 @@ class Sound {
 let sfxMap = {}
 let bgmMap = {}
 let sfx = { lightsaber }
-let bgm = { battle }
+let bgm = { battle, travel }
 
 Object.keys(sfx).forEach(key => sfxMap[key] = new Sound(sfx[key]))
 Object.keys(bgm).forEach(key => bgmMap[key] = new Sound(bgm[key]))
@@ -58,6 +58,5 @@ export function playBGM(music) {
 }
 
 export let audioReady = Promise.all([promises]).then(() => {
-    console.log('audio ready!')
     return true
 })

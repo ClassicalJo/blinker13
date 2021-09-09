@@ -21,7 +21,7 @@ function isWorldPaused() {
 }
 bindKeys('enter', function () {
     UI.countdown()
-    playBGM('battle')
+    playBGM('travel')
 })
 
 bindKeys('ctrl', function () {
