@@ -64,9 +64,10 @@ Object.keys(sfx).forEach(key => sfxMap[key] = new Sound(sfx[key]))
 Object.keys(bgm).forEach(key => bgmMap[key] = new Sound(bgm[key]))
 
 let promises = [
-    Object.keys(sfxMap).map(key => sfxMap[key].ready),
-    Object.keys(bgmMap).map(key => bgmMap[key].ready)
-]
+    Object.keys(sfxMap).map(key => sfxMap[key].promise),
+    Object.keys(bgmMap).map(key => bgmMap[key].promise)
+].flat()
+
 export function playSFX(sfx) {
     sfxMap[sfx].play()
 }
@@ -79,7 +80,6 @@ export function changeBGM(music) {
     bgmMap[playing].stopBGM()
     playBGM(music)
 }
-export let audioReady = Promise.all([promises]).then(() => {
-    return true
-})
+export let audioReady = Promise.all(promises)
+
 

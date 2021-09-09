@@ -1,9 +1,7 @@
 import { Sprite, unbindKeys, bindKeys, init, randInt } from './kontra'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_CENTER_HEIGHT, WORLD_CENTER_WIDTH } from './init'
 import { drawBeziers, drawCircle, drawDashedLine, drawDashedText, drawRect, screen, } from './images'
-import { audioReady } from './audioLoader'
 import { isSameCoord } from './helpers'
-import { explosion } from './particles'
 
 const { context } = init()
 const MAP_TILE_WIDTH = 50
@@ -27,6 +25,7 @@ export let initUI = container => ({
         bindKeys('enter', () => {
             unbindKeys('enter')
             container.restart()
+            this.toggle('lose', false)
             this.start()
         })
     },
@@ -171,10 +170,6 @@ export let initUI = container => ({
                 }
             })
         },
-        loading: {
-            show: !audioReady,
-            sprite: screen('black')
-        },
     },
     render: function () {
         Object.keys(this.elements).forEach(key => {
@@ -185,9 +180,6 @@ export let initUI = container => ({
         Object.keys(this.elements).forEach(key => this.elements[key].sprite.update())
     }
 })
-
-
-
 
 let holopad = color => {
     let [w, h, l, m] = [WORLD_WIDTH, WORLD_HEIGHT, 100, 200]
@@ -290,13 +282,12 @@ let text = (text, offsetX, offsetY, fontSize) => Sprite({
     }
 })
 
-let loseScreen = container => Sprite({
+let loseScreen = () => Sprite({
     children: [
         holopad('red'),
         text('FATAL ERROR', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT, 50),
         text('PRESS ENTER TO TRY AGAIN', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT + 200, 35),
         frame()
-        
     ],
 })
 

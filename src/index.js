@@ -5,32 +5,41 @@ import { screen, spaceGas } from './images.js'
 import { pool } from './particles.js'
 import { initUI } from './ui.js'
 import { SAT } from './sat.js'
-import { changeBGM, playBGM } from './audioLoader.js'
+import { audioReady, changeBGM, playBGM } from './audioLoader.js'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_X, WORLD_Y, WORLD_Z, WORLD_INITIAL_COORDS } from './init'
 import { isSameCoord } from './helpers'
 
+audioReady.then(() => {
+    loadingLoop.stop()
+    loop.start()
+    bindAllKeys()
+})
 
 initKeys()
 
-keyMap['ControlLeft'] = 'ctrl'
-keyMap['ShiftLeft'] = 'shift'
-keyMap['Escape'] = 'esc'
-keyMap['Enter'] = 'enter'
+function bindAllKeys(){
+    keyMap['ControlLeft'] = 'ctrl'
+    keyMap['ShiftLeft'] = 'shift'
+    keyMap['Escape'] = 'esc'
+    keyMap['Enter'] = 'enter'
+
+    bindKeys('enter', function () {
+        UI.countdown()
+        playBGM('travel')
+    })
+    
+    bindKeys('ctrl', function () {
+        if (world.switcherooOnCooldown) return
+        world.switcherooOnCooldown = true
+        world.switcheroo()
+        setTimeout(() => world.switcherooOnCooldown = false, 500)
+    })
+}
 
 function isWorldPaused() {
     return world.isPaused
 }
-bindKeys('enter', function () {
-    UI.countdown()
-    playBGM('travel')
-})
 
-bindKeys('ctrl', function () {
-    if (world.switcherooOnCooldown) return
-    world.switcherooOnCooldown = true
-    world.switcheroo()
-    setTimeout(() => world.switcherooOnCooldown = false, 500)
-})
 
 
 
@@ -226,6 +235,23 @@ const loop = GameLoop({
     },
 })
 
+let loading = Sprite({
+    children: [
+        spaceGas(0, 0, 2, 'purple'),
+        screen('black', 0.5)
+    ]
+})
+
+const loadingLoop = GameLoop({
+    render: () => {
+        loading.render()
+    },
+    update: () => {
+        loading.update()
+    }
+
+})
+
 let filter = screen('blue', 0.25)
 filter.update = function () {
     switch (world.currentCoords.z) {
@@ -248,7 +274,7 @@ const background = Sprite({
     ]
 })
 
-loop.start()
 
+loadingLoop.start()
 
 

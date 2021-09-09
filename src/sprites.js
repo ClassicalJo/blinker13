@@ -210,12 +210,12 @@ export class Player extends RectBody {
     collide(body) {
         if (!this.canCollide || this.invulnerable || !this.isActive() || !this.canMove) return
         if (body instanceof Enemy) {
-            this.tempInvulnerable(1000)
+            let players = Object.values(this.container.playerMap)
+            players.forEach(key => key.tempInvulnerable(1000))
             let inverse = Vector(this.dx * -1, this.dy * -1).normalize()
-            this.dx = inverse.x * this.width || 0
-            this.dy = inverse.y * this.height || -this.height
+            this.setVelocity(inverse.x * this.width || 0, inverse.y * this.height || -this.height)
             if (this.container.getRegen()) {
-                Object.values(this.container.playerMap).forEach(key => key.die())
+                players.forEach(key => key.die())
                 setTimeout(() => this.container.lose(), 1500)
             }
             else {
@@ -598,11 +598,11 @@ export class Goal extends RectBody {
     constructor(coord, container) {
         super(WORLD_CENTER_WIDTH - 25, WORLD_CENTER_HEIGHT - 25, 50, 50, coord, container)
         this.color = 'white'
-        
+
     }
     update() {
         this.rotation += degToRad(1)
-    
+
     }
     collide(body) {
         if (body instanceof Player) {
