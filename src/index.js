@@ -5,8 +5,9 @@ import { screen, spaceGas } from './images.js'
 import { pool } from './particles.js'
 import { initUI } from './ui.js'
 import { SAT } from './sat.js'
-import { playBGM } from './audioLoader.js'
+import { changeBGM, playBGM } from './audioLoader.js'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_X, WORLD_Y, WORLD_Z, WORLD_INITIAL_COORDS } from './init'
+import { isSameCoord } from './helpers'
 
 
 initKeys()
@@ -70,18 +71,16 @@ class World extends Sprite.class {
         let stairs = this.stairMap[this.currentCoords.z].up
         let coords = stairs == undefined ? new Coords(0, 0, 0) : stairs.coords
         let position = stairs == undefined ? { x: 400, y: 200 } : { x: stairs.x, y: stairs.y + 100 }
-        for (let sprite in this.playerMap) {
-            this.playerMap[sprite].travel(coords)
-            this.playerMap[sprite].setPosition(position.x, position.y)
-            this.playerMap[sprite].setVelocity(0, 0)
-            this.playerMap[sprite].regen = false
-        }
+        Object.values(this.playerMap).forEach(key => {
+            key.travel(coords)
+            key.setPosition(position.x, position.y)
+            key.canMove = true
+            key.regen = false
+            key.opacity = 1
+        })
         this.travel(coords)
+    }
 
-    }
-    save() {
-        this.savedWorld = { ...this, isPaused: true }
-    }
     makeGoal() {
         let randX = randInt(0, this.size.x - 1)
         let randY = randInt(0, this.size.y - 1)
@@ -159,6 +158,18 @@ class World extends Sprite.class {
         this.currentCoords = coords
         this.exploredMaps.add(coords)
         this.currentQuadrant = this.getQuadrant(coords)
+        this.checkBoss() && console.log('BOSSFIGHT')
+    }
+    checkBoss() {
+        return isSameCoord(this.currentCoords, this.stairMap[this.currentCoords.z].down.coords)
+    }
+    bossFight() {
+        //CERRAR LAS PUERTAS
+        //ACTIVAR LA MUSICA
+    }
+    bossWin() {
+        //ACTIVAR LAS PUERTAS Y EL PORTAL
+        //CAMBIAR LA MUSICA
     }
     render() {
         this.currentQuadrant.bodies.forEach(key => {

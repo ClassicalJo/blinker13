@@ -42,3 +42,7 @@ export function getDirectionVector(body) {
     if (vector.x === 0 && vector.y === 0) return Vector(0, -1).normalize()
     return vector.normalize()
 }
+
+export function isSameCoord(coord1, coord2) {
+    return coord1.x == coord2.x && coord1.y == coord2.y && coord1.z == coord2.z
+}

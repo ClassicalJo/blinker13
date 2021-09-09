@@ -2,17 +2,14 @@ import { Sprite, unbindKeys, bindKeys, init, randInt } from './kontra'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_CENTER_HEIGHT, WORLD_CENTER_WIDTH } from './init'
 import { drawBeziers, drawCircle, drawDashedLine, drawDashedText, drawRect, screen, } from './images'
 import { audioReady } from './audioLoader'
+import { isSameCoord } from './helpers'
+import { explosion } from './particles'
 
 const { context } = init()
 const MAP_TILE_WIDTH = 50
 const MAP_TILE_HEIGHT = 50
 const MAP_TILE_GAP = 25
 const MAP_TILE_HALF_GAP = MAP_TILE_GAP / 2
-
-function isSameCoord(coord1, coord2) {
-    return coord1.x == coord2.x && coord1.y == coord2.y && coord1.z == coord2.z
-}
-
 
 export let initUI = container => ({
     disableAll() {
@@ -43,53 +40,55 @@ export let initUI = container => ({
         unbindKeys('enter')
         this.toggle('title')
         this.toggle('subtitle')
-        setTimeout(() => this.elements.black.sprite.isStarting = true, 500)
-        setTimeout(() => this.start(), 2500)
+        setTimeout(() => this.elements.blackout.sprite.isStarting = true, 500)
+        setTimeout(() => this.elements.holopad.show = false, 2500)
+        setTimeout(() => this.start(), 3500)
     },
     start: function () {
-        let elements = ['map', 'mapGrid', 'depth', 'currentCoords', 'darken', 'black']
+        let elements = ['map', 'mapGrid', 'currentCoords', 'darken', 'blackout', 'holopad']
         elements.forEach(key => this.toggle(key))
+        this.elements.lose.sprite = loseScreen()
         container.isPaused = false
         bindKeys('esc', () => {
             container.isPaused = !container.isPaused
         })
     },
-    elements: {        
-        black: {
+    elements: {
+        blackout: {
             show: true,
             sprite: function () {
                 let blackout = screen('black')
-                blackout.isStarting = false,
-                    blackout.update = function () {
-                        if (blackout.isStarting && blackout.opacity > 0.1) blackout.opacity -= 0.0125
-                    }
+                blackout.isStarting = false
+                blackout.update = function () {
+                    if (blackout.isStarting && blackout.opacity > 0.1) blackout.opacity -= 0.0125
+                }
                 return blackout
             }()
         },
         title: {
             show: true,
-            sprite: title('BLINKER', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT)
+            sprite: text('BLINKER', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT, 50)
         },
         subtitle: {
             show: true,
-            sprite: title("PRESS ENTER", WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT + 250)
+            sprite: text("PRESS ENTER TO BEGIN", WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT + 250, 35)
         },
         darken: {
             show: false,
             sprite: screen('black', 0.5)
         },
-
         currentCoords: {
             show: false,
             sprite: Sprite({
                 color: 'white',
                 x: 400,
-                y: 400,
+                y: WORLD_CENTER_HEIGHT - 150,
                 opacity: 0.6,
-                render: function () {
-                    drawDashedText(this.context, this.color, `X ${container.currentCoords.x}`)
-                    drawDashedText(this.context, this.color, `Y ${container.currentCoords.y}`, 0, 75)
-                }
+                children: [
+                    text(`X: ${container.currentCoords.x}`, 0, 0, 35),
+                    text(`Y: ${container.currentCoords.y}`, 0, 75, 35),
+                    text(`Z: ${container.currentCoords.z}`, 0, 150, 35)
+                ],
             })
         },
         victory: {
@@ -102,7 +101,7 @@ export let initUI = container => ({
         },
         holopad: {
             show: true,
-            sprite: holopad(),
+            sprite: holopad('green'),
         },
         frame: {
             show: true,
@@ -125,6 +124,7 @@ export let initUI = container => ({
                         this.lifetime = 0
                         this.rand = randInt(200, 450)
                         this.flicker = randInt(100, 200)
+                        this.color = 'white'
                     }
                 },
                 render: function () {
@@ -145,18 +145,6 @@ export let initUI = container => ({
                         let dest = { x: (w + g) * x - hg, y: height - hg }
                         drawDashedLine(this.context, this.color, origin.x, origin.y, dest.x, dest.y)
                     }
-                }
-            })
-        },
-        depth: {
-            show: false,
-            sprite: Sprite({
-                x: WORLD_CENTER_WIDTH,
-                y: WORLD_CENTER_HEIGHT + container.size.y * (MAP_TILE_HEIGHT + MAP_TILE_GAP) / 2 + MAP_TILE_GAP,
-                color: 'white',
-                opacity: 0.6,
-                render: function () {
-                    drawDashedText(this.context, this.color, `DEPTH ${container.currentCoords.z}`)
                 }
             })
         },
@@ -201,7 +189,7 @@ export let initUI = container => ({
 
 
 
-let holopad = () => {
+let holopad = color => {
     let [w, h, l, m] = [WORLD_WIDTH, WORLD_HEIGHT, 100, 200]
     let shapes = [
         [
@@ -225,6 +213,7 @@ let holopad = () => {
         shouldWait: 0,
         transparent: true,
         lifetime: 0,
+        baseColor: color,
         shapes,
         update: function () {
             this.lifetime++
@@ -240,13 +229,13 @@ let holopad = () => {
         render: function () {
             if (this.transparent) this.color = 'transparent'
             else if (this.shouldWait < 200) {
-                this.color = 'green'
+                this.color = this.baseColor
             }
             else {
                 this.color = context.createLinearGradient(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
-                this.color.addColorStop(0 + this.flicker, 'green')
+                this.color.addColorStop(0 + this.flicker, this.baseColor)
                 this.color.addColorStop(.05 + this.flicker, 'transparent')
-                this.color.addColorStop(.1 + this.flicker, 'green')
+                this.color.addColorStop(.1 + this.flicker, this.baseColor)
             }
             drawBeziers(this.context, this.color, shapes)
         }
@@ -282,47 +271,32 @@ let frame = () => {
     })
 }
 
-let title = (text, offsetX, offsetY) => Sprite({
+let text = (text, offsetX, offsetY, fontSize) => Sprite({
     color: "white",
     flicker: randInt(50, 250),
     lifetime: 0,
     opacity: 0.6,
     update: function () {
         this.lifetime++
-        if (this.lifetime > 250) this.color = this.color == 'white' ? 'transparent' : "white"
-        if (this.lifetime >= 250 + this.flicker) {
+        if (this.lifetime > 500) this.color = this.color == 'white' ? 'transparent' : "white"
+        if (this.lifetime >= 500 + this.flicker) {
             this.lifetime = 0
             this.flicker = randInt(50, 250)
             this.color = 'white'
         }
     },
     render: function () {
-        drawDashedText(this.context, this.color, text, offsetX, offsetY)
+        drawDashedText(this.context, this.color, text, fontSize, offsetX, offsetY, true)
     }
 })
 
-let loseScreen = () => {
-    return Sprite({
-        showText: false,
-        color: 'white',
-        children: [
-            Sprite({
-                opacity: 0,
-                width: WORLD_WIDTH,
-                height: WORLD_HEIGHT,
-                opacity: 0,
-                color: 'red',
-                update: function () {
-                    if (this.opacity < 0.5) this.opacity += 0.001
-                    else this.showText = true
-                },
-                render: function () {
-                    drawRect(this.context, this.color, this.width, this.height)
-                }
-            })],
-        render: function () {
-            this.children[0].showText && drawDashedText(this.context, this.color, 'FATAL ERROR', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT)
-            this.children[0].showText && drawDashedText(this.context, this.color, 'PRESS ENTER TO TRY AGAIN.', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT + 200)
-        }
-    })
-}
+let loseScreen = container => Sprite({
+    children: [
+        holopad('red'),
+        text('FATAL ERROR', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT, 50),
+        text('PRESS ENTER TO TRY AGAIN', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT + 200, 35),
+        frame()
+        
+    ],
+})
+

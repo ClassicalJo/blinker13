@@ -2,13 +2,15 @@ import { WORLD_HEIGHT, WORLD_WIDTH } from "./init";
 import { rotateVertex } from "./helpers";
 import { Sprite, degToRad } from "./kontra";
 
-export function drawDashedText(ctx, color, text, offsetX = 0, offsetY = 0) {
-    ctx.font = '50px Arial Black'
+export function drawDashedText(ctx, color, text, fontSize,offsetX = 0, offsetY = 0, fill = false) {
+    ctx.font = `${fontSize}px Arial Black`
     ctx.setLineDash([15, 3])
-    ctx.lineWidth = 5
+    ctx.lineWidth = fontSize/10
     ctx.strokeStyle = color
+    ctx.fillStyle = color
     ctx.textAlign = 'center'
     ctx.strokeText(text, offsetX, offsetY)
+    fill && ctx.fillText(text, offsetX,offsetY)
 }
 export function drawDashedLine(ctx, color, x1, y1, x2, y2) {
     ctx.beginPath()

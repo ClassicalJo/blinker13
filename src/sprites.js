@@ -1,5 +1,5 @@
 import { degToRad, keyPressed, init, randInt, Sprite, Vector } from "./kontra"
-import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_INITIAL_COORDS } from './init'
+import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_INITIAL_COORDS, WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT } from './init'
 import { drawBeziers, drawRamiel, drawRect, drawDia, drawPortal, drawCircle } from "./images"
 import { fire, explosion, absorb, exhale, smoke } from "./particles"
 import { playBGM, playSFX } from "./audioLoader"
@@ -159,6 +159,7 @@ export class Player extends RectBody {
         this.name = name
         this.label = 'player'
         this.regen = false
+        this.canMove = true
     }
     attack() {
         if (!this.combo || this.combo.finished) return
@@ -180,6 +181,7 @@ export class Player extends RectBody {
         }, cooldown)
     }
     move() {
+        if (!this.canMove) return
         if (this.x < 0) this.x = this.width
         if (this.x > WORLD_WIDTH) this.x = WORLD_WIDTH - this.width
         if (this.y < 0) this.y = this.height
@@ -206,13 +208,16 @@ export class Player extends RectBody {
         }
     }
     collide(body) {
-        if (!this.canCollide || this.invulnerable || !this.isActive()) return
+        if (!this.canCollide || this.invulnerable || !this.isActive() || !this.canMove) return
         if (body instanceof Enemy) {
             this.tempInvulnerable(1000)
             let inverse = Vector(this.dx * -1, this.dy * -1).normalize()
             this.dx = inverse.x * this.width || 0
             this.dy = inverse.y * this.height || -this.height
-            if (this.container.getRegen()) this.container.lose()
+            if (this.container.getRegen()) {
+                Object.values(this.container.playerMap).forEach(key => key.die())
+                setTimeout(() => this.container.lose(), 1500)
+            }
             else {
                 this.container.switcheroo()
                 this.regenerate()
@@ -255,7 +260,13 @@ export class Player extends RectBody {
             [[30, 0], [[40, 0, 40, 25, 30, 25]], [30, 0]],
         ]
         drawRect(this.context, this.invulnerable ? this.container.lifetime % 2 === 0 ? 'transparent' : this.color : this.color, this.width, this.height)
-        !this.regen && drawBeziers(this.context, `rgba(255,255,255,1)`, shapes)
+        !this.regen && drawBeziers(this.context, 'white', shapes)
+    }
+    die() {
+        this.opacity = 0
+        this.setVelocity(0, 0)
+        this.canMove = false
+        explosion(this)
     }
 }
 
@@ -585,11 +596,13 @@ class Orbiter extends Enemy {
 
 export class Goal extends RectBody {
     constructor(coord, container) {
-        super(WORLD_WIDTH / 2 - 25, WORLD_HEIGHT / 2 - 25, 50, 50, coord, container)
+        super(WORLD_CENTER_WIDTH - 25, WORLD_CENTER_HEIGHT - 25, 50, 50, coord, container)
         this.color = 'white'
+        
     }
     update() {
         this.rotation += degToRad(1)
+    
     }
     collide(body) {
         if (body instanceof Player) {

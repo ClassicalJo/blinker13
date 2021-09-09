@@ -18,6 +18,7 @@ class Sound {
                 if (done) {
                     this.wave = this.player.createWave()
                     this.audio = document.createElement('audio')
+                    this.audio.volume = 0
                     this.audio.src = URL.createObjectURL(new Blob([this.wave], { type: 'audio/wav' }))
                 }
             }, 0)
@@ -28,20 +29,36 @@ class Sound {
     }
     play() {
         this.audio.pause()
+        this.audio.volume = 1
         this.audio.play()
     }
     playBGM() {
         if (this.ready) {
             this.audio.loop = true
-            this.audio.volume = 0.5
+            let interval = setInterval(() => {
+                this.audio.volume += 0.05
+                if (this.audio.volume > 0.5) {
+                    clearInterval(interval)
+                }
+            }, 100)
             this.audio.play()
         }
+    }
+    stopBGM() {
+        let interval = setInterval(() => {
+            this.audio.volume -= 0.05
+            if (this.audio.volume < 0.1) {
+                this.audio.pause()
+                clearInterval(interval)
+            }
+        }, 100)
     }
 }
 let sfxMap = {}
 let bgmMap = {}
 let sfx = { lightsaber }
 let bgm = { battle, travel }
+let playing = null
 
 Object.keys(sfx).forEach(key => sfxMap[key] = new Sound(sfx[key]))
 Object.keys(bgm).forEach(key => bgmMap[key] = new Sound(bgm[key]))
@@ -55,8 +72,14 @@ export function playSFX(sfx) {
 }
 export function playBGM(music) {
     bgmMap[music].playBGM()
+    playing = music
 }
 
+export function changeBGM(music) {
+    bgmMap[playing].stopBGM()
+    playBGM(music)
+}
 export let audioReady = Promise.all([promises]).then(() => {
     return true
 })
+
