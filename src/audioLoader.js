@@ -1,5 +1,5 @@
 import { CPlayer } from "./cPlayer";
-import { lightsaber, battle, travel, explosion, hit } from "./sfx";
+import { lightsaber, battle, travel, explosion, hit, rush } from "./sfx";
 
 class Sound {
     constructor(song) {
@@ -58,7 +58,7 @@ class Sound {
 }
 let sfxMap = {}
 let bgmMap = {}
-let sfx = { lightsaber, explosion,hit }
+let sfx = { lightsaber, explosion, hit, rush }
 let bgm = { battle, travel }
 let playing = null
 
