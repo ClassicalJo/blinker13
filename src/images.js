@@ -1,7 +1,7 @@
 import { WORLD_HEIGHT, WORLD_WIDTH } from "./init";
 import { rotateVertex } from "./helpers";
 import { Sprite, degToRad } from "./kontra";
-
+import { TRANSPARENT, WHITE } from "./helpers";
 
 export function drawDashedText(ctx, color, text, fontSize, offsetX = 0, offsetY = 0, fill = false) {
     ctx.font = `${fontSize}px Arial Black`
@@ -61,18 +61,6 @@ export function drawRect(ctx, color, width, height, offsetX = 0, offsetY = 0, st
     stroke && ctx.stroke()
 }
 
-export function drawDia(ctx, color, width, height) {
-    ctx.beginPath()
-    ctx.fillStyle = color
-    let lines = [
-        [0, height / 2],
-        [width / 2, 0],
-        [width, height / 2],
-        [width / 2, height]
-    ]
-    lines.forEach(key => ctx.lineTo(...key))
-    ctx.fill()
-}
 export function drawPortal(ctx, color) {
     let height = 50
     let width = 30
@@ -152,14 +140,14 @@ export function drawRamiel(ctx, color, w, h) {
 }
 
 export function drawBardiel(body) {
-    let { width: w, height: h, color, context, invulnerable, container } = body
+    let { width: w, height: h, color, context, inv, u } = body
     let h2 = h + h / 2
     let shapes = [
         [[0, -h / 4], [[0, -h / 2, -w / 2, -h, -w, -h], [w * 2, -h, w * 2, -h, w * 2, -h], [w + w / 2, -h, w, -h / 2, w, -h / 4]], [0, -h / 4]],
         [[0, h + h / 4], [[0, h2, -w / 2, 2 * h, -w, 2 * h], [w * 2, 2 * h, w * 2, 2 * h, w * 2, 2 * h], [w + w / 2, 2*h, w, h2, w, h + h / 4]], [0, h + h / 4]],
     ]
-    drawRect(context, invulnerable ? container.lifetime % 2 === 0 ? 'transparent' : color : color, w, h)
-    drawBeziers(context, 'white', shapes)
+    drawRect(context, inv ? u.lifetime % 2 === 0 ? TRANSPARENT : color : color, w, h)
+    drawBeziers(context, WHITE, shapes)
 }
 
 export function screen(color, opacity = 1) {

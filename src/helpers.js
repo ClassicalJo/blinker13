@@ -46,3 +46,8 @@ export function getDirectionVector(body) {
 export function isSameCoord(coord1, coord2) {
     return coord1.x == coord2.x && coord1.y == coord2.y && coord1.z == coord2.z
 }
+
+export const TRANSPARENT = 'transparent'
+export const BLUE = 'blue'
+export const WHITE = 'white'
+export const BLACK = 'black'

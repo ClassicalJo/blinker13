@@ -1,5 +1,6 @@
 import { Pool, randInt, Sprite, Vector } from './kontra'
 import { drawCircle } from './images'
+import { getTheta } from './helpers'
 
 export let pool = Pool({
     create: Sprite
@@ -73,7 +74,7 @@ export let absorb = body => {
     let dest = Vector(body.x, body.y)
     let rand = Vector(randInt(-300, 300), randInt(-300, 300)).normalize().scale(radiusEffect)
     let pos = dest.add(rand)
-    let theta = Math.atan2(body.y - pos.y, body.x - pos.x)
+    let theta = getTheta(pos, body)
     let direction = Vector(Math.cos(theta), Math.sin(theta)).normalize()
     let frames = 100
     let speed = pos.distance(dest) / frames
@@ -101,7 +102,7 @@ export let exhale = body => {
     let radiusEffect = 100
     let pos = Vector(body.x, body.y)
     let dest = Vector(randInt(-3, 3), randInt(-3, 3))
-    let theta = Math.atan2(dest.y - pos.y, dest.x - pos.x)
+    let theta = getTheta(pos, dest)
     let target = Vector(pos.x + radiusEffect * Math.cos(theta), pos.y + radiusEffect * Math.sin(theta))
     let ttl = 100
     let { x: dx, y: dy } = dest.normalize().scale(target.distance(pos) / ttl)

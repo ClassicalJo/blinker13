@@ -2,8 +2,6 @@
 import kontra from 'rollup-plugin-kontra'
 
 export default {
-    entry: 'src/index.js',
-    dest: 'build/main.min.js',
     plugins: [
         kontra({
             gameObject: {
@@ -27,11 +25,6 @@ export default {
             }
         })
     ],
-    format: 'iife',
-    sourceMap: 'inline',
-    input: {
-
-    },
     input: 'src/index.js',
     output: {
         file: 'build/bundle.js',

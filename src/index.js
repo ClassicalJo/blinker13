@@ -1,6 +1,6 @@
 import { init, initKeys, keyMap, bindKeys, unbindKeys, randInt, Vector, Sprite, GameLoop } from './kontra'
 import { Quadrant, Depth, Coords } from './quadrants.js'
-import { Enemy, Stairs, DiaBody, Goal, Player, Link, GiantEnemy, Asteroid, FinalBoss } from './sprites.js'
+import { Enemy, Stairs, Goal, Player, Link, GiantEnemy, Asteroid, FinalBoss } from './sprites.js'
 import { screen, spaceGas } from './images.js'
 import { pool } from './particles.js'
 import { initUI } from './ui.js'
@@ -8,6 +8,10 @@ import { SAT } from './sat.js'
 import { audioReady, changeBGM, playBGM } from './audioLoader.js'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_X, WORLD_Y, WORLD_Z, WORLD_INITIAL_COORDS } from './init'
 import { isSameCoord } from './helpers'
+import { BLACK } from './helpers'
+
+const PLAYER = 'player'
+const SHADOW = 'shadow'
 
 audioReady.then(() => {
     loadingLoop.stop()
@@ -45,41 +49,37 @@ function isWorldPaused() {
     return world.isPaused
 }
 
-
-
-
 class World extends Sprite.class {
     constructor(x, y, z) {
         super();
         this.size = { x, y, z }
         this.depths = this.createDepths(x, y, z)
-        this.currentCoords = new Coords(...WORLD_INITIAL_COORDS)
-        this.currentQuadrant = this.getQuadrant(this.currentCoords)
+        this.coords = new Coords(...WORLD_INITIAL_COORDS)
+        this.q = this.getQuadrant(this.coords)
         this.stairMap = {}
         this.width = WORLD_WIDTH
         this.height = WORLD_HEIGHT
         this.exploredMaps = new Set()
-        this.activeSprite = 'player'
+        this.active = PLAYER
         this.makeStairs()
         this.makeEnemies()
         this.makeBosses()
         this.makeGoal()
-        this.travel(this.currentCoords)
-        this.player = new Player(400, 200, 'goldenrod', 'player', this.currentCoords, this)
-        this.shadow = new Player(375, 500, 'purple', 'shadow', this.currentCoords, this)
+        this.travel(this.coords)
+        this.player = new Player(400, 200, 'goldenrod', PLAYER, this.coords, this)
+        this.shadow = new Player(375, 500, 'purple', SHADOW, this.coords, this)
         this.switcherooOnCooldown = false
         this.playerMap = { shadow: this.shadow, player: this.player }
         this.lifetime = 0
         this.isPaused = true
     }
     getRegen() {
-        return (this.playerMap['player'].regen || this.playerMap['shadow'].regen)
+        return (this.getActive().regen || this.getInactive().regen)
     }
     victory() {
         unbindAll()
         this.getPlayers().forEach(key => key.canMove = false)
-        this.currentQuadrant.goal.animate()
-
+        this.q.goal.shouldAnimate = true
     }
     showVictory() {
         UI.win()
@@ -88,7 +88,7 @@ class World extends Sprite.class {
         UI.lose()
     }
     restart() {
-        let stairs = this.stairMap[this.currentCoords.z].up
+        let stairs = this.stairMap[this.coords.z].up
         this.getPlayers().forEach(key => {
             key.travel(stairs.coords)
             key.setPosition(stairs.x, stairs.y)
@@ -146,8 +146,6 @@ class World extends Sprite.class {
             if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
                 isSameCoord(key.coords, up.coords) ||
                 isSameCoord(key.coords, down.coords)) return
-
-            
             for (let i = 0; i < randInt(0, 4); i++) {
                 key.add(
                     new Enemy(
@@ -155,10 +153,11 @@ class World extends Sprite.class {
                         randInt(offset, WORLD_HEIGHT - offset),
                         randInt(25, 50),
                         key.coords,
-                        this
+                        this,
+                        2 + key.coords.z
                     ))
             }
-            for (let i = 0; i < randInt(0, 10); i++) {
+            for (let i = 0; i < randInt(5, 10 + 5 * key.coords.z); i++) {
                 key.add(
                     new Asteroid(
                         randInt(offset, WORLD_WIDTH - offset),
@@ -190,44 +189,47 @@ class World extends Sprite.class {
         return this.depths[z].quadrants[x][y]
     }
     getCurrentQuadrant() {
-        return this.getQuadrant(this.currentCoords)
+        return this.getQuadrant(this.coords)
     }
     getPlayers() {
         return Object.values(this.playerMap)
     }
+    getActive() {
+        return this.playerMap[this.active]
+    }
+    getInactive() {
+        return this.playerMap[this.toggleShadow(this.active)]
+    }
     travel(coords) {
         pool.clear()
-        this.currentQuadrant.clear()
-        this.currentCoords = coords
+        this.q.clear()
+        this.coords = coords
         this.exploredMaps.add(coords)
-        this.currentQuadrant = this.getQuadrant(coords)
-        this.checkBoss() && this.bossFight()
+        this.q = this.getQuadrant(coords)
+        this.checkBoss() && changeBGM('battle')
     }
     checkBoss() {
-        return isSameCoord(this.currentCoords, this.stairMap[this.currentCoords.z].down.coords) && !this.currentQuadrant.cleared
-    }
-    bossFight() {
-        changeBGM('battle')
+        return isSameCoord(this.coords, this.stairMap[this.coords.z].down.coords) && !this.q.cleared
     }
     bossWin() {
         changeBGM('travel')
-        this.currentQuadrant.open()
-        this.stairMap[this.currentCoords.z].down.opacity = 1
-        this.stairMap[this.currentCoords.z].down.enableTravel = true
-        this.currentQuadrant.cleared = true
+        this.q.open()
+        this.stairMap[this.coords.z].down.opacity = 1
+        this.stairMap[this.coords.z].down.enableTravel = true
+        this.q.cleared = true
     }
     showGoal() {
         changeBGM('travel')
-        this.currentQuadrant.add(this.currentQuadrant.goal)
+        this.q.add(this.q.goal)
     }
     render() {
-        this.currentQuadrant.bodies.forEach(key => {
+        this.q.bodies.forEach(key => {
             key.render()
         })
     }
     update() {
         this.lifetime++
-        let bodies = this.currentQuadrant.bodies
+        let bodies = this.q.bodies
         for (let i = bodies.length - 1; i >= 0; i--) {
             for (let j = i - 1; j >= 0; j--) {
                 if (bodies[i].canCollide && bodies[j].canCollide) {
@@ -245,14 +247,14 @@ class World extends Sprite.class {
         }
     }
     toggleShadow(str) {
-        return str === 'player' ? 'shadow' : 'player'
+        return str === PLAYER ? SHADOW : PLAYER
     }
     switcheroo() {
         if (this.getRegen()) return
-        let link = new Link(this.playerMap[this.activeSprite], this.playerMap[this.toggleShadow(this.activeSprite)], this)
+        let link = new Link(this.getActive(), this.getInactive(), this)
         link.add()
-        this.activeSprite = this.toggleShadow(this.activeSprite)
-        this.playerMap[this.activeSprite].tempInvulnerable(300)
+        this.active = this.toggleShadow(this.active)
+        this.getActive().tInv(300)
     }
 }
 let world = new World(WORLD_X, WORLD_Y, WORLD_Z)
@@ -278,7 +280,7 @@ const loop = GameLoop({
 let loading = Sprite({
     children: [
         spaceGas(0, 0, 2, 'purple'),
-        screen('black', 0.5)
+        screen(BLACK, 0.5)
     ]
 })
 
@@ -294,7 +296,7 @@ const loadingLoop = GameLoop({
 
 let filter = screen('blue', 0.25)
 filter.update = function () {
-    switch (world.currentCoords.z) {
+    switch (world.coords.z) {
         case 1: return this.color = 'blue'
         case 2: return this.color = 'purple'
         case 3: return this.color = 'red'

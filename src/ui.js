@@ -2,6 +2,7 @@ import { Sprite, unbindKeys, bindKeys, init, randInt } from './kontra'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_CENTER_HEIGHT, WORLD_CENTER_WIDTH } from './init'
 import { drawBeziers, drawCircle, drawDashedLine, drawDashedText, drawRect, screen, } from './images'
 import { isSameCoord } from './helpers'
+import { WHITE, BLACK, BLUE, TRANSPARENT, } from "./helpers";
 
 const { context } = init()
 const MAP_TILE_WIDTH = 50
@@ -9,7 +10,9 @@ const MAP_TILE_HEIGHT = 50
 const MAP_TILE_GAP = 25
 const MAP_TILE_HALF_GAP = MAP_TILE_GAP / 2
 
-export let initUI = container => ({
+
+
+export let initUI = u => ({
     disableAll() {
         Object.keys(this.elements).forEach(key => this.toggle(key, false))
     },
@@ -21,10 +24,10 @@ export let initUI = container => ({
         unbindKeys('esc')
         this.disableAll()
         this.toggle('lose', true)
-        container.isPaused = true
+        u.isPaused = true
         bindKeys('enter', () => {
             unbindKeys('enter')
-            container.restart()
+            u.restart()
             this.toggle('lose', false)
             this.start()
         })
@@ -33,7 +36,7 @@ export let initUI = container => ({
         unbindKeys('esc')
         this.disableAll()
         this.toggle('victory', true)
-        container.isPaused = true
+        u.isPaused = true
     },
     countdown: function () {
         unbindKeys('enter')
@@ -44,19 +47,18 @@ export let initUI = container => ({
         setTimeout(() => this.start(), 3500)
     },
     start: function () {
-        let elements = ['map', 'mapGrid', 'currentCoords', 'darken', 'blackout', 'holopad']
+        let elements = ['map', 'mapGrid', 'darken', 'blackout', 'holopad']
         elements.forEach(key => this.toggle(key))
-        this.elements.lose.sprite = loseScreen()
-        container.isPaused = false
+        u.isPaused = false
         bindKeys('esc', () => {
-            container.isPaused = !container.isPaused
+            u.isPaused = !u.isPaused
         })
     },
     elements: {
         blackout: {
             show: true,
             sprite: function () {
-                let blackout = screen('black')
+                let blackout = screen(BLACK)
                 blackout.isStarting = false
                 blackout.update = function () {
                     if (blackout.isStarting && blackout.opacity > 0.1) blackout.opacity -= 0.0125
@@ -74,21 +76,7 @@ export let initUI = container => ({
         },
         darken: {
             show: false,
-            sprite: screen('black', 0.5)
-        },
-        currentCoords: {
-            show: false,
-            sprite: Sprite({
-                color: 'white',
-                x: 400,
-                y: WORLD_CENTER_HEIGHT - 150,
-                opacity: 0.6,
-                children: [
-                    text(`X: ${container.currentCoords.x}`, 0, 0, 35),
-                    text(`Y: ${container.currentCoords.y}`, 0, 75, 35),
-                    text(`Z: ${container.currentCoords.z}`, 0, 150, 35)
-                ],
-            })
+            sprite: screen(BLACK, 0.5)
         },
         victory: {
             show: false,
@@ -108,38 +96,21 @@ export let initUI = container => ({
         },
         mapGrid: {
             show: false,
-            sprite: Sprite({
-                x: WORLD_CENTER_WIDTH - container.size.x * 75 / 2,
+            sprite: new Flicker({
+                x: WORLD_CENTER_WIDTH - u.size.x * 75 / 2,
                 y: 200,
                 opacity: 0.5,
-                lifetime: 0,
-                color: 'white',
-                rand: randInt(200, 450),
-                flicker: randInt(100, 200),
-                update: function () {
-                    this.lifetime++
-                    if (this.lifetime > this.rand) this.color = this.color == 'transparent' ? 'white' : 'transparent'
-                    if (this.lifetime > this.rand + this.flicker) {
-                        this.lifetime = 0
-                        this.rand = randInt(200, 450)
-                        this.flicker = randInt(100, 200)
-                        this.color = 'white'
-                    }
-                },
+                color: WHITE,
                 render: function () {
                     let [w, h, hg, g] = [MAP_TILE_WIDTH, MAP_TILE_HEIGHT, MAP_TILE_HALF_GAP, MAP_TILE_GAP]
-                    let width = container.size.x * w + (container.size.x - 1) * g + g
-                    let height = container.size.y * h + (container.size.y - 1) * g + g
-                    this.context.setLineDash([5, 5])
-                    this.context.lineWidth = 5
-                    this.context.strokeStyle = this.color
-                    drawRect(this.context, this.color, width, height, -hg, -hg, true, false)
-                    for (let y = 1; y < container.size.y; y++) {
+                    let width = u.size.x * w + (u.size.x - 1) * g + g
+                    let height = u.size.y * h + (u.size.y - 1) * g + g
+                    for (let y = 0; y <= u.size.y; y++) {
                         let origin = { x: -hg, y: (w + g) * y - hg }
                         let dest = { x: width - hg, y: (w + g) * y - hg }
                         drawDashedLine(this.context, this.color, origin.x, origin.y, dest.x, dest.y)
                     }
-                    for (let x = 1; x < container.size.x; x++) {
+                    for (let x = 0; x <= u.size.x; x++) {
                         let origin = { x: (w + g) * x - hg, y: -hg }
                         let dest = { x: (w + g) * x - hg, y: height - hg }
                         drawDashedLine(this.context, this.color, origin.x, origin.y, dest.x, dest.y)
@@ -150,21 +121,21 @@ export let initUI = container => ({
         map: {
             show: false,
             sprite: Sprite({
-                x: WORLD_CENTER_WIDTH - container.size.x * (MAP_TILE_WIDTH + MAP_TILE_GAP) / 2,
+                x: WORLD_CENTER_WIDTH - u.size.x * (MAP_TILE_WIDTH + MAP_TILE_GAP) / 2,
                 y: 200,
                 render: function () {
                     let [w, h, g] = [MAP_TILE_WIDTH, MAP_TILE_HEIGHT, MAP_TILE_GAP]
-                    let { up, down } = container.stairMap[container.currentCoords.z]
-                    for (let coord of container.exploredMaps) {
-                        if (coord.z === container.currentCoords.z) {
+                    let { up, down } = u.stairMap[u.coords.z]
+                    for (let coord of u.exploredMaps) {
+                        if (coord.z === u.coords.z) {
                             let hasDownStairs = down && isSameCoord(down.coords, coord)
                             let hasUpStairs = up && isSameCoord(up.coords, coord)
-                            let isCurrentCoord = isSameCoord(coord, container.currentCoords)
-                            let color = hasDownStairs ? hasUpStairs ? "orange" : 'red' : hasUpStairs ? 'yellow' : 'blue'
+                            let isCurrentCoord = isSameCoord(coord, u.coords)
+                            let color = hasDownStairs ? 'yellow' : hasUpStairs ? "orange" : BLUE
                             let offsetX = coord.x * (g + w)
                             let offsetY = coord.y * (g + h)
                             drawRect(this.context, color, w, h, offsetX, offsetY)
-                            isCurrentCoord && drawCircle(this.context, 'white', 5, offsetX + w / 2, offsetY + h / 2)
+                            isCurrentCoord && drawCircle(this.context, WHITE, 5, offsetX + w / 2, offsetY + h / 2)
                         }
                     }
                 }
@@ -200,9 +171,8 @@ let holopad = color => {
         ],
     ]
     return Sprite({
-        flicker: 0,
+        bar: 0,
         opacity: 0.15,
-        shouldWait: 0,
         transparent: true,
         lifetime: 0,
         baseColor: color,
@@ -210,25 +180,21 @@ let holopad = color => {
         update: function () {
             this.lifetime++
             this.transparent = !this.transparent
-            this.shouldWait++
-            if (this.shouldWait < 200) return
-            this.flicker += 0.01
-            if (this.flicker >= 0.9) {
-                this.shouldWait = 0
-                this.flicker = 0
+            if (this.lifetime < 200) return this.color = this.transparent ? TRANSPARENT : this.baseColor
+            this.movement += 0.01
+            if (this.bar >= 0.9) {
+                this.lifetime = 0
+                this.bar = 0
+            }
+            if (this.transparent) this.color = TRANSPARENT
+            else {
+                this.color = context.createLinearGradient(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
+                this.color.addColorStop(0 + this.bar, this.baseColor)
+                this.color.addColorStop(.05 + this.bar, TRANSPARENT)
+                this.color.addColorStop(.1 + this.bar, this.baseColor)
             }
         },
         render: function () {
-            if (this.transparent) this.color = 'transparent'
-            else if (this.shouldWait < 200) {
-                this.color = this.baseColor
-            }
-            else {
-                this.color = context.createLinearGradient(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
-                this.color.addColorStop(0 + this.flicker, this.baseColor)
-                this.color.addColorStop(.05 + this.flicker, 'transparent')
-                this.color.addColorStop(.1 + this.flicker, this.baseColor)
-            }
             drawBeziers(this.context, this.color, shapes)
         }
     })
@@ -236,7 +202,7 @@ let holopad = color => {
 
 let frame = () => {
     let [w, h, l, m, n] = [WORLD_WIDTH, WORLD_HEIGHT, 100, 200, 400]
-    let color = 'black'
+    let color = BLACK
     let shapes = [
         [
             [0, 0],
@@ -263,25 +229,34 @@ let frame = () => {
     })
 }
 
-let text = (text, offsetX, offsetY, fontSize) => Sprite({
-    color: "white",
-    flicker: randInt(50, 250),
-    lifetime: 0,
+let text = (text, offsetX, offsetY, fontSize) => new Flicker({
+    color: WHITE,
     opacity: 0.6,
-    update: function () {
-        this.lifetime++
-        if (this.lifetime > 500) this.color = this.color == 'white' ? 'transparent' : "white"
-        if (this.lifetime >= 500 + this.flicker) {
-            this.lifetime = 0
-            this.flicker = randInt(50, 250)
-            this.color = 'white'
-        }
-    },
     render: function () {
         drawDashedText(this.context, this.color, text, fontSize, offsetX, offsetY, true)
     }
 })
 
+class Flicker extends Sprite.class {
+    constructor(props) {
+        super(props);
+        this.baseColor = this.color;
+        this.flicker = randInt(50, 250);
+        this.lifetime = 0;
+    }
+    toggle() {
+        this.color = this.color == this.baseColor ? TRANSPARENT : this.baseColor
+    }
+    update() {
+        this.lifetime++
+        if (this.lifetime > 500) this.toggle()
+        if (this.lifetime >= 500 + this.flicker) {
+            this.lifetime = 0
+            this.flicker = randInt(50, 250)
+            this.color = this.baseColor
+        }
+    }
+}
 let loseScreen = () => Sprite({
     children: [
         holopad('red'),
@@ -294,8 +269,8 @@ let loseScreen = () => Sprite({
 let winScreen = () => Sprite({
     children: [
         screen('darkgrey'),
-        holopad('blue'),
-        text('WELCOME BACK', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT, 50),
+        holopad(BLUE),
+        text('WELCOME HOME', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT, 50),
         text('THANKS FOR KEEPING ME ALIVE', WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT + 200, 30),
         frame(),
     ]

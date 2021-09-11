@@ -10,13 +10,11 @@ export class Coords {
 }
 
 export class Quadrant {
-    constructor(x, y, z, container) {
+    constructor(x, y, z, u) {
         this.coords = new Coords(x, y, z)
         this.bodies = []
-        this.width = WORLD_WIDTH
-        this.height = WORLD_HEIGHT
-        this.thickness = 5
-        this.container = container
+        this.t = 5
+        this.u = u
         this.frame = this.setFrame()
         this.frame.forEach(key => this.add(key))
         this.cleared = false
@@ -46,7 +44,7 @@ export class Quadrant {
         }
     }
     setFrame() {
-        let [w, h, t] = [this.width, this.height, this.thickness]
+        let [w, h, t] = [WORLD_WIDTH, WORLD_HEIGHT, this.t]
         let validDestiny = () => {
             let { x, y, z } = this.coords
             let up = y - 1 >= 0 ? new Coords(x, y - 1, z) : null
@@ -57,21 +55,21 @@ export class Quadrant {
         }
         let [up, left, down, right] = validDestiny(this.coords)
         return [
-            new Wall(w / 2, t / 2, w, t, t, up, this.container),
-            new Wall(t / 2, t + h / 2, t, h, t, left, this.container),
-            new Wall(w - t / 2, h / 2 + t, t, h, t, right, this.container),
-            new Wall(w / 2, h - t / 2, w, t, t, down, this.container),
+            new Wall(w / 2, t / 2, w, t, t, up, this.u),
+            new Wall(t / 2, t + h / 2, t, h, t, left, this.u),
+            new Wall(w - t / 2, h / 2 + t, t, h, t, right, this.u),
+            new Wall(w / 2, h - t / 2, w, t, t, down, this.u),
         ]
     }
 }
 
 export class Depth {
-    constructor(x, y, z, container) {
+    constructor(x, y, z, u) {
         this.quadrants = []
         for (let i = 0; i < x; i++) {
             let column = []
             for (let j = 0; j < y; j++) {
-                column.push(new Quadrant(i, j, z, container))
+                column.push(new Quadrant(i, j, z, u))
             }
             this.quadrants.push(column)
         }
