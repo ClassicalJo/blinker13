@@ -1,6 +1,6 @@
 import { degToRad, keyPressed, init, randInt, Sprite, Vector } from "./kontra"
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_INITIAL_COORDS, WORLD_CENTER_WIDTH, WORLD_CENTER_HEIGHT } from './init'
-import { drawBeziers, drawRamiel, drawRect, drawDia, drawPortal, drawCircle } from "./images"
+import { drawBeziers, drawRamiel, drawRect, drawDia, drawPortal, drawCircle, drawGoal, drawBardiel } from "./images"
 import { fire, explosion, absorb, exhale, smoke } from "./particles"
 import { playBGM, playSFX } from "./audioLoader"
 import { getDirectionVector, getPointInCircle, distanceToTarget, noDirection, leftRightSwitch, upDownSwitch, getTheta, rotateVertex, } from "./helpers"
@@ -210,6 +210,7 @@ export class Player extends RectBody {
     collide(body) {
         if (!this.canCollide || this.invulnerable || !this.isActive() || !this.canMove) return
         if (body instanceof Enemy) {
+            playSFX('hit')
             let players = this.container.getPlayers()
             players.forEach(key => key.tempInvulnerable(1000))
             let inverse = Vector(this.dx * -1, this.dy * -1).normalize()
@@ -267,6 +268,7 @@ export class Player extends RectBody {
         this.setVelocity(0, 0)
         this.canMove = false
         explosion(this)
+        playSFX('explosion')
     }
 }
 
@@ -345,6 +347,7 @@ export class Enemy extends RectBody {
     }
     die() {
         explosion(this)
+        playSFX('explosion')
         this.remove()
     }
     collide(body) {
@@ -583,6 +586,7 @@ export class GiantEnemy extends Enemy {
     }
     die() {
         explosion(this)
+        playSFX('explosion')
         this.container.bossWin()
         this.remove()
     }
@@ -613,16 +617,17 @@ export class Goal extends RectBody {
         this.color = 'white'
         this.shouldAnimate = false
         this.rotation = degToRad(1)
-        this.rotate = 0
+        this.rotate = 1
         this.scaling = 1
         this.grow = true
+        this.anchor = { x: 0, y: 0 }
 
     }
     animate() {
         this.shouldAnimate = true
     }
     draw() {
-        drawRect(this.context, this.color, this.width, this.height)
+        drawGoal(this)
     }
     update() {
         this.rotation += degToRad(this.rotate)
@@ -637,7 +642,7 @@ export class Goal extends RectBody {
             this.grow = false
         }
         if (this.scaleX < 1) {
-        
+
             this.remove()
             setTimeout(() => this.container.showVictory(), 1000)
         }
@@ -672,13 +677,67 @@ export class FinalBoss extends Enemy {
         this.width = 100
         this.height = 100
         this.color = 'pink'
+        this.fireCount = 0
+        this.speed = 4
+    }
+    draw() {
+        drawBardiel(this)
+    }
+    die() {
+        explosion(this)
+        playSFX('explosion')
+        this.container.showGoal()
+        this.remove()
+    }
+    load(speed, size) {
+        new Bullet(this, this.container.playerMap[this.container.activeSprite], speed, size).add()
+        playSFX('hit')
+    }
+    fire() {
+        if (this.container.lifetime % 25 == 0) {
+            this.fireCount++
+            if (this.fireCount < 5) this.load(5, 10)
+            else if (this.fireCount == 5) this.load(10, 10)
+            else if (this.fireCount == 10) {
+                this.load(10, 75)
+                setTimeout(() => this.load(10, 75), 150)
+                setTimeout(() => this.load(10, 75), 300)
+
+            }
+            else if (this.fireCount > 15) this.fireCount = 0
+        }
+    }
+    update() {
+        this.fire()
+        this.move()
+        this.rotation = getTheta(this, this.container.playerMap[this.container.activeSprite])
+        this.vertices = this.getVertices()
+    }
+}
+
+
+class Bullet extends Enemy {
+    constructor(origin, destiny, speed, size) {
+        super(origin.x, origin.y, size, origin.coords, origin.container);
+        console.log(origin, destiny, speed)
+        this.width = size
+        this.destiny = { ...destiny }
+        this.height = size
+        this.color = 'orange'
+        this.timestamp = this.container.lifetime
+        this.theta = getTheta(origin, destiny)
+        this.setVelocity(speed * Math.cos(this.theta), speed * Math.sin(this.theta))
     }
     draw() {
         drawRect(this.context, this.color, this.width, this.height)
     }
     die() {
-        explosion(this)
-        this.container.showGoal()
         this.remove()
+    }
+    update() {
+        this.vertices = this.getVertices()
+        this.rotation += degToRad(15)
+        this.advance()
+        if (this.container.lifetime > this.timestamp + 300) this.die()
     }
 }

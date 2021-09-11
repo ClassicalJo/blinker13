@@ -140,50 +140,40 @@ class World extends Sprite.class {
     }
     makeEnemies() {
         let offset = 100
-        for (let i = 0; i < randInt(0, 4); i++) {
-            this.depths
-                .map(key => key.quadrants)
-                .flat()
-                .flat()
-                .forEach(key => {
-                    let { up, down } = this.stairMap[key.coords.z]
-                    if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
-                        isSameCoord(key.coords, up.coords) ||
-                        isSameCoord(key.coords, down.coords)) return
-                    key.add(new Enemy(
+        let quadrants = this.depths.map(key => key.quadrants).flat().flat()
+        quadrants.forEach(key => {
+            if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
+                isSameCoord(key.coords, up.coords) ||
+                isSameCoord(key.coords, down.coords)) return
+
+            let { up, down } = this.stairMap[key.coords.z]
+            for (let i = 0; i < randInt(0, 4); i++) {
+                key.add(
+                    new Enemy(
                         randInt(offset, WORLD_WIDTH - offset),
                         randInt(offset, WORLD_HEIGHT - offset),
                         randInt(25, 50),
                         key.coords,
                         this
                     ))
-                })
-        }
-        for (let i = 0; i < randInt(0, 10); i++) {
-            this.depths
-                .map(key => key.quadrants)
-                .flat()
-                .flat()
-                .forEach(key => {
-                    let { up, down } = this.stairMap[key.coords.z]
-                    if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
-                        isSameCoord(key.coords, up.coords) ||
-                        isSameCoord(key.coords, down.coords)) return
-                    key.add(new Asteroid(
+            }
+            for (let i = 0; i < randInt(0, 10); i++) {
+                key.add(
+                    new Asteroid(
                         randInt(offset, WORLD_WIDTH - offset),
                         randInt(offset, WORLD_HEIGHT - offset),
                         randInt(25, 50),
                         key.coords,
                         this
                     ))
-                })
-        }
+            }
+        })
     }
+
     makeBosses() {
         for (let i = 0; i < this.size.z - 1; i++) {
             let { coords } = this.stairMap[i].down
-            let boss = new GiantEnemy(coords, this)
-            boss.add()
+            new GiantEnemy(coords, this).add()
         }
     }
     createDepths(x, y, z) {
@@ -323,7 +313,4 @@ const background = Sprite({
     ]
 })
 
-
 loadingLoop.start()
-
-

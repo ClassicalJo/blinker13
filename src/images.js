@@ -2,15 +2,16 @@ import { WORLD_HEIGHT, WORLD_WIDTH } from "./init";
 import { rotateVertex } from "./helpers";
 import { Sprite, degToRad } from "./kontra";
 
-export function drawDashedText(ctx, color, text, fontSize,offsetX = 0, offsetY = 0, fill = false) {
+
+export function drawDashedText(ctx, color, text, fontSize, offsetX = 0, offsetY = 0, fill = false) {
     ctx.font = `${fontSize}px Arial Black`
     ctx.setLineDash([15, 3])
-    ctx.lineWidth = fontSize/10
+    ctx.lineWidth = fontSize / 10
     ctx.strokeStyle = color
     ctx.fillStyle = color
     ctx.textAlign = 'center'
     ctx.strokeText(text, offsetX, offsetY)
-    fill && ctx.fillText(text, offsetX,offsetY)
+    fill && ctx.fillText(text, offsetX, offsetY)
 }
 export function drawDashedLine(ctx, color, x1, y1, x2, y2) {
     ctx.beginPath()
@@ -44,11 +45,12 @@ export function strokeBeziers(ctx, color, shape) {
     ctx.stroke();
 }
 
-export function drawCircle(ctx, color, radius, offsetX = 0, offsetY = 0) {
+export function drawCircle(ctx, color, radius, offsetX = 0, offsetY = 0, stroke = false, fill = true) {
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(offsetX, offsetY, radius, 0, 2 * Math.PI);
-    ctx.fill();
+    fill && ctx.fill()
+    stroke && ctx.stroke()
 }
 
 export function drawRect(ctx, color, width, height, offsetX = 0, offsetY = 0, stroke = false, fill = true) {
@@ -87,6 +89,31 @@ export function drawPortal(ctx, color) {
     drawBeziers(ctx, color, shapes)
 }
 
+export function drawGoal(body) {
+    let { width, height, context, color } = body
+    let basicShape = [
+        [0, 0],
+        [
+            [width, 0, width, 0, width, -height],
+            [width, 0, width, 0, width, 0],
+        ],
+        [0, 0],
+    ]
+    let back = [
+        [0, -height / 2],
+        [
+            [width / 2, -height / 2, width, -height / 2, width, -height],
+            [width, 0, width, 0, width, 0],
+            [0, 0, 0, 0, 0]
+        ],
+        [0, -height / 2],
+    ]
+    let shapes = shapePetals(basicShape, degToRad(24))
+    let backshapes = shapePetals(back, degToRad(24))
+    drawBeziers(context, '#306BAC', backshapes)
+    drawBeziers(context, color, shapes)
+
+}
 export function rotateShape(shape, theta) {
     let c1 = rotateVertex(theta, { x: shape[0], y: shape[1] }, { x: 0, y: 0 })
     let c2 = rotateVertex(theta, { x: shape[2], y: shape[3] }, { x: 0, y: 0 })
@@ -122,6 +149,17 @@ export function drawRamiel(ctx, color, w, h) {
     ]
 
     drawBeziers(ctx, color, shapes)
+}
+
+export function drawBardiel(body) {
+    let { width: w, height: h, color, context, invulnerable, container } = body
+    let h2 = h + h / 2
+    let shapes = [
+        [[0, -h / 4], [[0, -h / 2, -w / 2, -h, -w, -h], [w * 2, -h, w * 2, -h, w * 2, -h], [w + w / 2, -h, w, -h / 2, w, -h / 4]], [0, -h / 4]],
+        [[0, h + h / 4], [[0, h2, -w / 2, 2 * h, -w, 2 * h], [w * 2, 2 * h, w * 2, 2 * h, w * 2, 2 * h], [w + w / 2, 2*h, w, h2, w, h + h / 4]], [0, h + h / 4]],
+    ]
+    drawRect(context, invulnerable ? container.lifetime % 2 === 0 ? 'transparent' : color : color, w, h)
+    drawBeziers(context, 'white', shapes)
 }
 
 export function screen(color, opacity = 1) {
