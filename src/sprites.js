@@ -719,7 +719,6 @@ export class FinalBoss extends Enemy {
 class Bullet extends Enemy {
     constructor(origin, destiny, speed, size) {
         super(origin.x, origin.y, size, origin.coords, origin.container);
-        console.log(origin, destiny, speed)
         this.width = size
         this.destiny = { ...destiny }
         this.height = size

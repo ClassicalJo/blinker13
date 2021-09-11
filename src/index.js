@@ -61,8 +61,8 @@ class World extends Sprite.class {
         this.exploredMaps = new Set()
         this.activeSprite = 'player'
         this.makeStairs()
-        // this.makeEnemies()
-        // this.makeBosses()
+        this.makeEnemies()
+        this.makeBosses()
         this.makeGoal()
         this.travel(this.currentCoords)
         this.player = new Player(400, 200, 'goldenrod', 'player', this.currentCoords, this)
@@ -142,11 +142,12 @@ class World extends Sprite.class {
         let offset = 100
         let quadrants = this.depths.map(key => key.quadrants).flat().flat()
         quadrants.forEach(key => {
+            let { up, down } = this.stairMap[key.coords.z]
             if (isSameCoord(key.coords, new Coords(0, 0, 0)) ||
                 isSameCoord(key.coords, up.coords) ||
                 isSameCoord(key.coords, down.coords)) return
 
-            let { up, down } = this.stairMap[key.coords.z]
+            
             for (let i = 0; i < randInt(0, 4); i++) {
                 key.add(
                     new Enemy(
